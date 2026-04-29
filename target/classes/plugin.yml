@@ -1,0 +1,9 @@
+name: QuarentineBase
+version: 1.14
+main: com.anne.plugins.Plugins
+api-version: 1.20
+commands:
+  kit:
+    description: Recebe os martelos Quarentine v1.3.
+  quarentine:
+    description: Comando Quarentine (use /quarentine limpar).
