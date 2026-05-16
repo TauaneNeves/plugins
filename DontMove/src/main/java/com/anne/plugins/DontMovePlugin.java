@@ -37,7 +37,8 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
     private List<UUID> activePlayers = new ArrayList<>();
     private List<UUID> winners = new ArrayList<>();
 
-    private Location lobbyLocation;
+    private Location esperaLocation;
+    private Location saidaLocation;
     private Location startLocation;
     private double finishZ;
     private boolean isFinishGreater;
@@ -47,7 +48,6 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
 
     private BukkitRunnable gameTask;
 
-    // Ficheiro para guardar os pontos do Ranking
     private File dataFile;
     private FileConfiguration dataConfig;
 
@@ -59,7 +59,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         
         getServer().getPluginManager().registerEvents(this, this);
         getCommand("dontmove").setExecutor(this);
-        getLogger().info("Plugin DontMove habilitado com Sucesso! Sistema de Ranking ativo.");
+        getLogger().info("Plugin DontMove habilitado com Sucesso! Identidade visual atualizada.");
     }
 
     @Override
@@ -68,52 +68,57 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         getLogger().info("Plugin DontMove desabilitado.");
     }
 
+    private void checkAndSet(String path, Object value) {
+        if (!getConfig().contains(path)) {
+            getConfig().set(path, value);
+        }
+    }
+
     private void setupDefaultConfig() {
-        getConfig().addDefault("settings.max_players", 20);
-        
-        // Configuracoes de Premios e Anti-Farm
-        getConfig().addDefault("settings.min_players_for_points", 4);
-        
-        getConfig().addDefault("settings.enable_reward", true);
-        getConfig().addDefault("settings.reward_command", "eco give %player% 500");
-        
-        getConfig().addDefault("settings.enable_consolation", true);
-        getConfig().addDefault("settings.consolation_command", "eco give %player% 50");
+        checkAndSet("settings.max_players", 20);
+        checkAndSet("settings.min_players_for_points", 4);
+        checkAndSet("settings.enable_reward", true);
+        checkAndSet("settings.reward_command", "eco give %player% 500");
+        checkAndSet("settings.enable_consolation", true);
+        checkAndSet("settings.consolation_command", "eco give %player% 50");
 
-        // Mensagens
-        getConfig().addDefault("messages.prefix", "&8[&cRound6&8] ");
-        getConfig().addDefault("messages.no_permission", "&cVoce nao tem permissao.");
-        getConfig().addDefault("messages.joined", "&b%player% entrou no jogo! (%current%/%max%)");
-        getConfig().addDefault("messages.already_in_game", "&cVoce ja esta no jogo.");
-        getConfig().addDefault("messages.arena_full", "&cA arena esta lotada! (%max% jogadores)");
-        getConfig().addDefault("messages.eliminated", "&c%player% se moveu e foi eliminado!");
-        getConfig().addDefault("messages.winner", "&a%player% cruzou a linha de chegada e sobreviveu!");
-        getConfig().addDefault("messages.game_over", "&6O jogo acabou! Vencedores: %winners%");
-        getConfig().addDefault("messages.nobody_survived", "&cNinguem sobreviveu ao jogo!");
-        getConfig().addDefault("messages.cancelled", "&cO jogo foi cancelado por um administrador.");
-        getConfig().addDefault("messages.need_setup", "&cDefina o lobby, start e finish antes de iniciar.");
-        getConfig().addDefault("messages.not_enough_players", "&cNao ha jogadores suficientes.");
-        getConfig().addDefault("messages.top_1_join", "&6&lO Campeao Atual &e%player% &6&lentrou na arena!");
-        getConfig().addDefault("messages.earned_points", "&aVoce ganhou &e%points% pontos &apara o ranking da temporada!");
-        getConfig().addDefault("messages.no_points_farm", "&cPartida sem jogadores suficientes para pontuar no ranking. (Minimo: %min%)");
+        checkAndSet("messages.prefix", "&8[&bDontMove&8] ");
+        checkAndSet("messages.no_permission", "&cVoce nao tem permissao.");
+        checkAndSet("messages.joined", "&b%player% entrou no jogo! (%current%/%max%)");
+        checkAndSet("messages.already_in_game", "&cVoce ja esta no jogo.");
+        checkAndSet("messages.left_game", "&eVoce saiu do minigame.");
+        checkAndSet("messages.not_in_game", "&cVoce nao esta na partida.");
+        checkAndSet("messages.arena_full", "&cA arena esta lotada! (%max% jogadores)");
+        checkAndSet("messages.eliminated", "&c%player% se moveu e foi eliminado!");
+        checkAndSet("messages.winner", "&a%player% cruzou a linha de chegada e sobreviveu!");
+        checkAndSet("messages.game_over", "&6O jogo acabou! Vencedores: %winners%");
+        checkAndSet("messages.nobody_survived", "&cNinguem sobreviveu ao jogo!");
+        checkAndSet("messages.cancelled", "&cO jogo foi cancelado por um administrador.");
+        checkAndSet("messages.need_setup", "&cDefina a Espera, Saida, Start e Finish antes de jogar.");
+        checkAndSet("messages.not_enough_players", "&cNao ha jogadores suficientes.");
+        checkAndSet("messages.top_1_join", "&6&lO Campeao Atual &e%player% &6&lentrou na arena!");
+        checkAndSet("messages.earned_points", "&aVoce ganhou &e%points% pontos &apara o ranking da temporada!");
+        checkAndSet("messages.no_points_farm", "&cPartida sem jogadores suficientes para pontuar no ranking. (Minimo: %min%)");
+        checkAndSet("messages.game_started", "&aA partida comecou! Siga as instrucoes na tela!");
 
-        // Titulos no ecra
-        getConfig().addDefault("titles.prepare_title", "&cDon't Move!");
-        getConfig().addDefault("titles.prepare_subtitle", "&ePrepare-se para correr...");
-        getConfig().addDefault("titles.green_title", "&aCORRA!");
-        getConfig().addDefault("titles.green_subtitle", "");
-        getConfig().addDefault("titles.yellow_title", "&eATENCAO...");
-        getConfig().addDefault("titles.yellow_subtitle", "");
-        getConfig().addDefault("titles.red_title", "&cNAO SE MOVA!");
-        getConfig().addDefault("titles.red_subtitle", "");
+        checkAndSet("titles.prepare_title", "&cDon't Move!");
+        checkAndSet("titles.prepare_subtitle", "&ePrepare-se para correr...");
+        checkAndSet("titles.green_title", "&aCORRA!");
+        checkAndSet("titles.green_subtitle", "");
+        checkAndSet("titles.yellow_title", "&eATENCAO...");
+        checkAndSet("titles.yellow_subtitle", "");
+        checkAndSet("titles.red_title", "&cNAO SE MOVA!");
+        checkAndSet("titles.red_subtitle", "");
 
-        getConfig().options().copyDefaults(true);
         saveConfig();
     }
 
     private void loadConfigSettings() {
-        if (getConfig().contains("locations.lobby")) {
-            lobbyLocation = (Location) getConfig().get("locations.lobby");
+        if (getConfig().contains("locations.espera")) {
+            esperaLocation = (Location) getConfig().get("locations.espera");
+        }
+        if (getConfig().contains("locations.saida")) {
+            saidaLocation = (Location) getConfig().get("locations.saida");
         }
         if (getConfig().contains("locations.start")) {
             startLocation = (Location) getConfig().get("locations.start");
@@ -127,9 +132,6 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         maxPlayers = getConfig().getInt("settings.max_players", 20);
     }
 
-    // ==========================================
-    // SISTEMA DE DADOS (JOGADORES E RANKING)
-    // ==========================================
     private void setupDataFile() {
         dataFile = new File(getDataFolder(), "jogadores.yml");
         if (!dataFile.exists()) {
@@ -165,7 +167,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
     }
 
     private void showTop(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD + "--- TOP Jogadores (Round 6) ---");
+        sender.sendMessage(ChatColor.GOLD + "--- TOP JOGADORES (DON'T MOVE) ---");
         if (dataConfig.getConfigurationSection("jogadores") == null) {
             sender.sendMessage(ChatColor.RED + "Nenhum jogador pontuou ainda.");
             return;
@@ -188,11 +190,10 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
             if (rank > 10) break;
         }
     }
-    // ==========================================
 
     private String getMsg(String path) {
-        String prefix = getConfig().getString("messages.prefix", "");
-        String msg = getConfig().getString(path, "");
+        String prefix = getConfig().getString("messages.prefix", "&8[&bDontMove&8] ");
+        String msg = getConfig().getString(path, "&c[Erro: Mensagem nao configurada no config.yml]");
         return ChatColor.translateAlternateColorCodes('&', prefix + msg);
     }
 
@@ -201,16 +202,39 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         return ChatColor.translateAlternateColorCodes('&', msg);
     }
 
+    private void sendHelpMenu(CommandSender sender) {
+        String linha = ChatColor.DARK_GRAY + "" + ChatColor.STRIKETHROUGH + "---------------------------------------------";
+        sender.sendMessage(linha);
+        sender.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "                 DON'T MOVE MINIGAME");
+        sender.sendMessage(linha);
+        sender.sendMessage(ChatColor.YELLOW + "/dontmove entrar " + ChatColor.GRAY + "- Entra na sala de espera.");
+        sender.sendMessage(ChatColor.YELLOW + "/dontmove sair " + ChatColor.GRAY + "- Sai do minigame.");
+        sender.sendMessage(ChatColor.YELLOW + "/dontmove top " + ChatColor.GRAY + "- Mostra o ranking de jogadores.");
+
+        if (sender.hasPermission("dontmove.admin")) {
+            sender.sendMessage("");
+            sender.sendMessage(ChatColor.RED + "" + ChatColor.BOLD + "   [COMANDOS ADMINISTRATIVOS]");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove start " + ChatColor.GRAY + "- Inicia a partida.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove stop " + ChatColor.GRAY + "- Cancela a partida.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove resetar " + ChatColor.GRAY + "- Zera o ranking.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove setlimit <num> " + ChatColor.GRAY + "- Limite de jogadores.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove setespera " + ChatColor.GRAY + "- Marca a Sala de Espera.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove setsaida " + ChatColor.GRAY + "- Marca o Lobby Final.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove setstart " + ChatColor.GRAY + "- Marca a Linha de Partida.");
+            sender.sendMessage(ChatColor.GOLD + "/dontmove setfinish " + ChatColor.GRAY + "- Marca a Linha de Chegada.");
+        }
+        sender.sendMessage(linha);
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage(ChatColor.RED + "Uso: /dontmove <setlobby|setstart|setfinish|setlimit|entrar|start|stop|top|resetar>");
+            sendHelpMenu(sender);
             return true;
         }
 
         String action = args[0].toLowerCase();
 
-        // Comandos que a consola tambem pode usar
         if (action.equals("top")) {
             showTop(sender);
             return true;
@@ -223,12 +247,11 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
             }
             dataConfig.set("jogadores", null);
             saveData();
-            sender.sendMessage(ChatColor.GREEN + "Ranking resetado com sucesso! Nova Temporada iniciada.");
-            Bukkit.broadcastMessage(getMsg("messages.prefix") + ChatColor.AQUA + "A Temporada do Round 6 foi resetada! Os pontos foram zerados.");
+            sender.sendMessage(ChatColor.GREEN + "Ranking resetado com sucesso!");
+            Bukkit.broadcastMessage(getMsg("messages.prefix") + ChatColor.AQUA + "A Temporada do Don't Move foi resetada! Pontos zerados.");
             return true;
         }
 
-        // Comandos apenas para jogadores
         if (!(sender instanceof Player)) {
             sender.sendMessage("Apenas jogadores podem usar este comando especifico.");
             return true;
@@ -237,15 +260,26 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         Player player = (Player) sender;
 
         switch (action) {
-            case "setlobby":
+            case "setespera":
                 if (!player.hasPermission("dontmove.admin")) {
                     player.sendMessage(getMsg("messages.no_permission"));
                     return true;
                 }
-                lobbyLocation = player.getLocation();
-                getConfig().set("locations.lobby", lobbyLocation);
+                esperaLocation = player.getLocation();
+                getConfig().set("locations.espera", esperaLocation);
                 saveConfig();
-                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Lobby definido com sucesso!");
+                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Sala de Espera definida com sucesso!");
+                break;
+                
+            case "setsaida":
+                if (!player.hasPermission("dontmove.admin")) {
+                    player.sendMessage(getMsg("messages.no_permission"));
+                    return true;
+                }
+                saidaLocation = player.getLocation();
+                getConfig().set("locations.saida", saidaLocation);
+                saveConfig();
+                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Lobby de Saida definido com sucesso!");
                 break;
 
             case "setstart":
@@ -257,7 +291,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                 getConfig().set("locations.start", startLocation);
                 isFinishGreater = finishZ > startLocation.getZ();
                 saveConfig();
-                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Local de inicio definido com sucesso!");
+                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Linha de Partida definida!");
                 break;
 
             case "setfinish":
@@ -271,7 +305,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                     isFinishGreater = finishZ > startLocation.getZ();
                 }
                 saveConfig();
-                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Linha de chegada definida com sucesso!");
+                player.sendMessage(getMsg("messages.prefix") + ChatColor.GREEN + "Linha de Chegada definida!");
                 break;
 
             case "setlimit":
@@ -298,7 +332,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                     player.sendMessage(getMsg("messages.prefix") + ChatColor.RED + "O jogo ja esta em andamento!");
                     return true;
                 }
-                if (lobbyLocation == null) {
+                if (esperaLocation == null || saidaLocation == null) {
                     player.sendMessage(getMsg("messages.need_setup"));
                     return true;
                 }
@@ -308,7 +342,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                 }
                 if (!activePlayers.contains(player.getUniqueId())) {
                     activePlayers.add(player.getUniqueId());
-                    player.teleport(lobbyLocation);
+                    player.teleport(esperaLocation);
                     player.setHealth(player.getMaxHealth());
                     player.setFoodLevel(20);
                     
@@ -318,7 +352,6 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                             .replace("%max%", String.valueOf(maxPlayers));
                     Bukkit.broadcastMessage(joinMsg);
 
-                    // Anuncia o TOP 1 se ele entrar
                     String top1 = getTop1Name();
                     if (top1 != null && top1.equals(player.getName())) {
                         Bukkit.broadcastMessage(getMsg("messages.top_1_join").replace("%player%", player.getName()));
@@ -328,13 +361,28 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                     player.sendMessage(getMsg("messages.already_in_game"));
                 }
                 break;
+                
+            case "sair":
+                if (activePlayers.contains(player.getUniqueId())) {
+                    if (gameState == GameState.PLAYING) {
+                        eliminatePlayer(player);
+                    } else {
+                        activePlayers.remove(player.getUniqueId());
+                        if (saidaLocation != null) player.teleport(saidaLocation);
+                        player.sendMessage(getMsg("messages.left_game"));
+                        Bukkit.broadcastMessage(getMsg("messages.prefix") + ChatColor.YELLOW + player.getName() + " saiu da sala.");
+                    }
+                } else {
+                    player.sendMessage(getMsg("messages.not_in_game"));
+                }
+                break;
 
             case "start":
                 if (!player.hasPermission("dontmove.admin")) {
                     player.sendMessage(getMsg("messages.no_permission"));
                     return true;
                 }
-                if (startLocation == null || lobbyLocation == null) {
+                if (startLocation == null || esperaLocation == null || saidaLocation == null) {
                     player.sendMessage(getMsg("messages.need_setup"));
                     return true;
                 }
@@ -355,7 +403,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                 break;
 
             default:
-                player.sendMessage(ChatColor.RED + "Comando desconhecido.");
+                sendHelpMenu(sender);
                 break;
         }
 
@@ -366,13 +414,15 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         gameState = GameState.PLAYING;
         lightState = LightState.RUN;
         winners.clear();
-        initialPlayerCount = activePlayers.size(); // Guarda quantos comecaram para o calculo de pontos
+        initialPlayerCount = activePlayers.size();
+        
+        Bukkit.broadcastMessage(getMsg("messages.game_started"));
 
         for (UUID uuid : activePlayers) {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) {
                 p.teleport(startLocation);
-                sendTitle1_8(p, getRawMsg("titles.prepare_title"), getRawMsg("titles.prepare_subtitle"));
+                broadcastPhaseToPlayer(p, getRawMsg("titles.prepare_title"), getRawMsg("titles.prepare_subtitle"), ChatColor.RED + "Prepare-se...");
                 p.playSound(p.getLocation(), Sound.NOTE_PLING, 1.0f, 1.0f);
             }
         }
@@ -390,12 +440,12 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
 
                 if (ticks == 0) {
                     lightState = LightState.RUN;
-                    broadcastTitle(getRawMsg("titles.green_title"), getRawMsg("titles.green_subtitle"));
+                    broadcastGlobalPhase(getRawMsg("titles.green_title"), getRawMsg("titles.green_subtitle"), ChatColor.GREEN + "=== CORRA! ===");
                 } else if (ticks == 60) {
-                    broadcastTitle(getRawMsg("titles.yellow_title"), getRawMsg("titles.yellow_subtitle"));
+                    broadcastGlobalPhase(getRawMsg("titles.yellow_title"), getRawMsg("titles.yellow_subtitle"), ChatColor.YELLOW + "=== ATENCAO... ===");
                 } else if (ticks == 90) {
                     lightState = LightState.STOP;
-                    broadcastTitle(getRawMsg("titles.red_title"), getRawMsg("titles.red_subtitle"));
+                    broadcastGlobalPhase(getRawMsg("titles.red_title"), getRawMsg("titles.red_subtitle"), ChatColor.RED + "=== PAROU! NAO SE MOVA! ===");
                 } else if (ticks >= 150) {
                     ticks = -1; 
                 }
@@ -407,6 +457,15 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
     }
 
     private void stopGame() {
+        if (gameState == GameState.PLAYING || gameState == GameState.LOBBY) {
+            for (UUID uuid : activePlayers) {
+                Player p = Bukkit.getPlayer(uuid);
+                if (p != null && saidaLocation != null) {
+                    p.teleport(saidaLocation);
+                }
+            }
+        }
+        
         gameState = GameState.LOBBY;
         lightState = LightState.RUN;
         activePlayers.clear();
@@ -419,16 +478,19 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
 
     private void eliminatePlayer(Player player) {
         activePlayers.remove(player.getUniqueId());
+        
         player.getWorld().strikeLightningEffect(player.getLocation());
-        player.setHealth(0.0);
+        
+        if (saidaLocation != null) {
+            player.teleport(saidaLocation);
+        }
         
         Bukkit.broadcastMessage(getMsg("messages.eliminated").replace("%player%", player.getName()));
 
-        // Premio de Consolacao
         if (getConfig().getBoolean("settings.enable_consolation", false)) {
             String cmd = getConfig().getString("settings.consolation_command").replace("%player%", player.getName());
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
-            player.sendMessage(getMsg("messages.prefix") + ChatColor.YELLOW + "Recebeste um premio de consolacao por teres participado!");
+            player.sendMessage(getMsg("messages.prefix") + ChatColor.YELLOW + "Você recebeu um premio!");
         }
 
         if (activePlayers.isEmpty()) {
@@ -442,19 +504,20 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         winners.add(player.getUniqueId());
         
         Bukkit.broadcastMessage(getMsg("messages.winner").replace("%player%", player.getName()));
-        player.teleport(lobbyLocation);
+        
+        if (saidaLocation != null) {
+            player.teleport(saidaLocation);
+        }
         player.playSound(player.getLocation(), Sound.LEVEL_UP, 1.0f, 1.0f);
 
-        // Sistema de Premio Financeiro / Item
         if (getConfig().getBoolean("settings.enable_reward", false)) {
             String cmd = getConfig().getString("settings.reward_command").replace("%player%", player.getName());
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
         }
 
-        // Sistema de Pontos Anti-Farm
         int minPlayers = getConfig().getInt("settings.min_players_for_points", 4);
         if (initialPlayerCount >= minPlayers) {
-            int earnedPoints = initialPlayerCount; // Ganha 1 ponto por cada pessoa que iniciou a partida
+            int earnedPoints = initialPlayerCount;
             addPoints(player.getUniqueId(), player.getName(), earnedPoints);
             player.sendMessage(getMsg("messages.earned_points").replace("%points%", String.valueOf(earnedPoints)));
         } else {
@@ -467,13 +530,18 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         }
     }
 
-    private void broadcastTitle(String title, String subtitle) {
+    private void broadcastGlobalPhase(String title, String subtitle, String fallbackText) {
         for (UUID uuid : activePlayers) {
             Player p = Bukkit.getPlayer(uuid);
             if (p != null) {
-                sendTitle1_8(p, title, subtitle);
+                broadcastPhaseToPlayer(p, title, subtitle, fallbackText);
             }
         }
+    }
+
+    private void broadcastPhaseToPlayer(Player player, String title, String subtitle, String fallbackText) {
+        sendTitle1_8(player, title, subtitle);
+        sendActionBar(player, fallbackText);
     }
 
     private void sendTitle1_8(Player player, String title, String subtitle) {
@@ -499,7 +567,19 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
                 sendPacket(player, packetSubtitle);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            if (title != null && !title.isEmpty()) player.sendMessage(title);
+            if (subtitle != null && !subtitle.isEmpty()) player.sendMessage(subtitle);
+        }
+    }
+
+    private void sendActionBar(Player player, String message) {
+        try {
+            Object chatMsg = getNMSClass("IChatBaseComponent$ChatSerializer").getMethod("a", String.class).invoke(null, "{\"text\":\"" + message + "\"}");
+            Constructor<?> constructor = getNMSClass("PacketPlayOutChat").getConstructor(getNMSClass("IChatBaseComponent"), byte.class);
+            Object packet = constructor.newInstance(chatMsg, (byte) 2);
+            sendPacket(player, packet);
+        } catch (Exception e) {
+            player.sendMessage(message);
         }
     }
 
@@ -517,8 +597,7 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
         try {
             String version = Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3];
             return Class.forName("net.minecraft.server." + version + "." + name);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             return null;
         }
     }
@@ -556,10 +635,13 @@ public class DontMovePlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        if (gameState == GameState.PLAYING && activePlayers.contains(event.getPlayer().getUniqueId())) {
-            eliminatePlayer(event.getPlayer());
-        } else {
-            activePlayers.remove(event.getPlayer().getUniqueId());
+        Player player = event.getPlayer();
+        if (activePlayers.contains(player.getUniqueId())) {
+            if (gameState == GameState.PLAYING) {
+                eliminatePlayer(player);
+            } else {
+                activePlayers.remove(player.getUniqueId());
+            }
         }
     }
 

@@ -1,8 +1,0 @@
-name: DontMove
-version: 1.0
-main: com.anne.plugins.DontMovePlugin
-api-version: 1.8
-commands:
-  dontmove:
-    description: Comando principal do minigame Don't Move
-    usage: /dontmove
