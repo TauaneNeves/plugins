@@ -1,9 +1,8 @@
-name: QuarentineBase
-version: 1.14
-main: com.anne.plugins.Plugins
-api-version: 1.20
+name: DontMove
+version: 1.0
+main: com.anne.plugins.DontMovePlugin
+api-version: 1.8
 commands:
-  kit:
-    description: Recebe os martelos Quarentine v1.3.
-  quarentine:
-    description: Comando Quarentine (use /quarentine limpar).
+  dontmove:
+    description: Comando principal do minigame Don't Move
+    usage: /dontmove
