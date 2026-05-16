@@ -1,0 +1,17 @@
+# Ignorar pastas de compilação do Maven
+**/target/
+
+# Ignorar todos os arquivos executáveis compilados .jar
+**/*.jar
+
+# Ignorar arquivos de configuração de IDEs (Eclipse, IntelliJ, VSCode)
+**/.idea/
+**/*.iml
+**/.settings/
+**/.classpath
+**/.project
+**/bin/
+
+# Ignorar arquivos temporários do sistema operacional
+.DS_Store
+Thumbs.db
