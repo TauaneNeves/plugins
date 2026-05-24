@@ -1,8 +1,12 @@
 name: DontMove
-version: 2.0
+version: 1.0
 main: com.anne.plugins.DontMovePlugin
 api-version: 1.8
+description: Um plugin profissional de minigame focado em reflexos com suporte a chaves e ranking por temporadas.
+author: AuraPlugins
 commands:
   dontmove:
-    description: Comando principal do minigame Don't Move
+    description: Comando principal do minigame.
     usage: /dontmove
+    permission: dontmove.use
+    permission-message: O sistema de seguranca bloqueou seu comando.

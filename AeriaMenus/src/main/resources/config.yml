@@ -1,0 +1,101 @@
+# ==========================================
+#        AERIAMENUS - CONFIGURAÇÃO
+# ==========================================
+
+modulos:
+  dar-itens-ao-entrar: true  
+  ativar-protecoes: true     
+  ativar-scoreboard: true    
+  ativar-chat: true          
+  ativar-clima-sempre-dia: true
+  ativar-mensagens-entrada: true
+  ativar-efeitos-entrada: true
+
+chat:
+  formato: "&8[&bLobby&8] &f%player% &8» &7%message%"
+
+mensagens-entrada:
+  entrou: "&8[&a+&8] &7%player% entrou no servidor."
+  saiu: "&8[&c-&8] &7%player% saiu do servidor."
+
+efeitos-entrada:
+  titulo: "&b&lAERIA PLUGINS"
+  subtitulo: "&7Bem-vindo(a) ao servidor, &f%player%&7!"
+  som: "ENTITY_PLAYER_LEVELUP"
+
+spawn:
+  teleportar-ao-entrar: true
+  altura-void: 0.0
+  local:
+    mundo: "world"
+    x: 0.0
+    y: 100.0
+    z: 0.0
+    yaw: 0.0
+    pitch: 0.0
+
+scoreboard:
+  titulo: "&b&lAERIA MENUS"
+  linhas:
+    - "&7-------------------"
+    - "&fOlá, &a%player%"
+    - ""
+    - "&fOnline: &e%online%"
+    - ""
+    - "&fSuporte:"
+    - "&esuporte.aeriaplugins@gmail.com"
+    - "&7-------------------"
+
+protecoes:
+  bloquear-quebra: true
+  bloquear-colocacao: true
+  bloquear-drop: true
+  bloquear-fome: true
+  bloquear-dano: true
+
+itens-entrada:
+  bussola:
+    material: "COMPASS"
+    slot: 4
+    nome: "&e&lSELETOR DE SERVIDORES &7(Clique)"
+    lore:
+      - "&7Clique para abrir o menu."
+    acoes:
+      - "menu: principal"
+  magica:
+    material: "CLOCK"
+    slot: 8
+    nome: "&d&lOCULTAR JOGADORES &7(Clique)"
+    lore:
+      - "&7Clique para esconder ou mostrar"
+      - "&7os outros jogadores."
+    acoes:
+      - "especial: alternar_visibilidade"
+
+menus:
+  principal:
+    titulo: "&8Menu AeriaMenus"
+    linhas: 3
+    itens:
+      survival:
+        slot: 11
+        material: "GRASS_BLOCK"
+        nome: "&a&lSURVIVAL"
+        lore:
+          - "&7Clique para entrar."
+        acoes:
+          - "servidor: survival"
+      em_breve:
+        slot: 15
+        material: "BARRIER"
+        nome: "&c&lMINIGAMES"
+        lore:
+          - "&7Servidor em construção!"
+        acoes:
+          # Se o nome do servidor for "configurar_aqui", ele avisa no chat
+          - "servidor: configurar_aqui"
+
+# ==========================================
+# REGIOES PROTEGIDAS (Criadas in-game)
+# ==========================================
+regioes: {}

@@ -1,0 +1,14 @@
+name: AeriaMenus
+version: 1.0.0
+main: com.aeriaplugins.plugins.Main
+api-version: '1.21'
+softdepend: [WorldEdit]
+commands:
+  aeriamenus:
+    description: Comando principal do AeriaMenus
+    aliases: [am]
+  setspawn:
+    description: Define o local de nascimento do Lobby
+    permission: aeriaplugins.admin
+  spawn:
+    description: Teleporta para o spawn do Lobby
