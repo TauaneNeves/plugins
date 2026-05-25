@@ -6,21 +6,25 @@ modulos:
   dar-itens-ao-entrar: true  
   ativar-protecoes: true     
   ativar-scoreboard: true    
+  ativar-bossbar: true
   ativar-chat: true          
   ativar-clima-sempre-dia: true
   ativar-mensagens-entrada: true
   ativar-efeitos-entrada: true
+  usar-placeholderapi: true
+  ativar-tablist-animada: true
+  ativar-actionbar-rotativa: true
 
 chat:
-  formato: "&8[&bLobby&8] &f%player% &8» &7%message%"
+  formato: "&#00d4ff[&bLobby&#00d4ff] &f%player_name% &8» &7%message%"
 
 mensagens-entrada:
-  entrou: "&8[&a+&8] &7%player% entrou no servidor."
-  saiu: "&8[&c-&8] &7%player% saiu do servidor."
+  entrou: "&8[&a+&8] &7%player_name% entrou no servidor."
+  saiu: "&8[&c-&8] &7%player_name% saiu do servidor."
 
 efeitos-entrada:
-  titulo: "&b&lAERIA PLUGINS"
-  subtitulo: "&7Bem-vindo(a) ao servidor, &f%player%&7!"
+  titulo: "<gradient:#00d4ff:#00ff55>&lAERIA MENUS</gradient>"
+  subtitulo: "&7Bem-vindo(a) ao servidor, &f%player_name%&7!"
   som: "ENTITY_PLAYER_LEVELUP"
 
 spawn:
@@ -34,17 +38,43 @@ spawn:
     yaw: 0.0
     pitch: 0.0
 
+bossbar:
+  titulo: "&#00d4ff&lAERIA MENUS &8| &fBem-vindo, &a%player_name%"
+  cor: "BLUE" 
+  estilo: "SOLID" 
+  progresso: 1.0
+
 scoreboard:
-  titulo: "&b&lAERIA MENUS"
+  titulo: "<gradient:#00d4ff:#00ff55>&lAERIA MENUS</gradient>"
   linhas:
     - "&7-------------------"
-    - "&fOlá, &a%player%"
+    - "&fOlá, &#00ff55%player_name%"
     - ""
-    - "&fOnline: &e%online%"
+    - "&fOnline: &#ffaa00%server_online%"
     - ""
     - "&fSuporte:"
-    - "&esuporte.aeriaplugins@gmail.com"
+    - "&#ff4444suporte.aeriamenus@gmail.com"
     - "&7-------------------"
+
+tablist:
+  tempo-atualizacao: 20
+  header:
+    - ""
+    - "<gradient:#00d4ff:#00ff55>&lAERIA MENUS - REDE DE JOGOS</gradient>"
+    - "&7Bem-vindo(a) de volta, &f%player_name%&7!"
+    - ""
+  footer:
+    - ""
+    - "&eAcesse nossa loja: &f&nloja.aeriamenus.com"
+    - "&7Jogadores conectados: &a%server_online%"
+    - ""
+
+actionbar:
+  tempo-entre-mensagens: 5
+  mensagens:
+    - "&eBem-vindo ao nosso Lobby Principal!"
+    - "&aCompre VIP e ajude o servidor: &nloja.aeriamenus.com"
+    - "&bUse a Bússola em seu inventário para jogar!"
 
 protecoes:
   bloquear-quebra: true
@@ -57,19 +87,23 @@ itens-entrada:
   bussola:
     material: "COMPASS"
     slot: 4
-    nome: "&e&lSELETOR DE SERVIDORES &7(Clique)"
+    custom-model-data: 0
+    nome: "&#ffaa00&lSELETOR DE SERVIDORES &7(Clique)"
     lore:
       - "&7Clique para abrir o menu."
     acoes:
+      - "som: UI_BUTTON_CLICK"
       - "menu: principal"
   magica:
     material: "CLOCK"
     slot: 8
-    nome: "&d&lOCULTAR JOGADORES &7(Clique)"
+    custom-model-data: 0
+    nome: "&#ff44ff&lOCULTAR JOGADORES &7(Clique)"
     lore:
       - "&7Clique para esconder ou mostrar"
       - "&7os outros jogadores."
     acoes:
+      - "som: UI_BUTTON_CLICK"
       - "especial: alternar_visibilidade"
 
 menus:
@@ -80,22 +114,24 @@ menus:
       survival:
         slot: 11
         material: "GRASS_BLOCK"
-        nome: "&a&lSURVIVAL"
+        custom-model-data: 0
+        nome: "&#00ff55&lSURVIVAL"
         lore:
-          - "&7Clique para entrar."
+          - "&7Clique para entrar no servidor Survival."
         acoes:
+          - "fechar"
+          - "mensagem: &aConectando ao Survival..."
+          - "som: ENTITY_EXPERIENCE_ORB_PICKUP"
           - "servidor: survival"
-      em_breve:
+      minigames:
         slot: 15
-        material: "BARRIER"
-        nome: "&c&lMINIGAMES"
+        material: "base64:eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2M0MGMyNWE5MGYyY2I3Y2JmZjI5OGFlZjQyYjBkNTJiOTM4NjcxMzUyZjFkNTdiMTUyNTIzOTQ0ZDliYzI3YyJ9fX0="
+        custom-model-data: 0
+        nome: "&#ff4444&lMINIGAMES"
         lore:
-          - "&7Servidor em construção!"
+          - "&7Servidor de Minigames!"
+          - "&7Online lá: &e(Em Breve)"
         acoes:
-          # Se o nome do servidor for "configurar_aqui", ele avisa no chat
-          - "servidor: configurar_aqui"
-
-# ==========================================
-# REGIOES PROTEGIDAS (Criadas in-game)
-# ==========================================
-regioes: {}
+          - "som: BLOCK_NOTE_BLOCK_BASS"
+          - "mensagem: &cEste servidor está em manutenção!"
+          - "fechar"
