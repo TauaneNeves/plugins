@@ -1,0 +1,30 @@
+# ==========================================
+#        MENU PRINCIPAL
+# ==========================================
+titulo: "&8Menu AeriaMenus"
+linhas: 3
+itens:
+  survival:
+    slot: 11
+    material: "GRASS_BLOCK"
+    custom-model-data: 0
+    nome: "&#00ff55&lSURVIVAL"
+    lore:
+      - "&7Clique para entrar no servidor Survival."
+    acoes:
+      - "fechar"
+      - "mensagem: &aConectando ao Survival..."
+      - "som: ENTITY_EXPERIENCE_ORB_PICKUP"
+      - "servidor: survival"
+  minigames:
+    slot: 15
+    material: "base64:eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2M0MGMyNWE5MGYyY2I3Y2JmZjI5OGFlZjQyYjBkNTJiOTM4NjcxMzUyZjFkNTdiMTUyNTIzOTQ0ZDliYzI3YyJ9fX0="
+    custom-model-data: 0
+    nome: "&#ff4444&lMINIGAMES"
+    lore:
+      - "&7Servidor de Minigames!"
+      - "&7Online lá: &e(Em Breve)"
+    acoes:
+      - "som: BLOCK_NOTE_BLOCK_BASS"
+      - "mensagem: &cEste servidor está em manutenção!"
+      - "fechar"

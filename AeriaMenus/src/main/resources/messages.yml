@@ -1,0 +1,15 @@
+# ==========================================
+#        AERIAMENUS - MENSAGENS E CHAT
+# ==========================================
+
+chat:
+  formato: "&#00d4ff[&bLobby&#00d4ff] &f%player_name% &8» &7%message%"
+
+mensagens-entrada:
+  entrou: "&8[&a+&8] &7%player_name% entrou no servidor."
+  saiu: "&8[&c-&8] &7%player_name% saiu do servidor."
+
+efeitos-entrada:
+  titulo: "<gradient:#00d4ff:#00ff55>&lAERIA MENUS</gradient>"
+  subtitulo: "&7Bem-vindo(a) ao servidor, &f%player_name%&7!"
+  som: "ENTITY_PLAYER_LEVELUP"
