@@ -21,7 +21,6 @@ public class FileManager {
     }
 
     public void loadAll() {
-        // Carrega ou cria a config.yml padrão
         plugin.saveDefaultConfig();
         plugin.reloadConfig();
         
@@ -34,7 +33,17 @@ public class FileManager {
         if (!messagesFile.exists()) {
             plugin.saveResource("messages.yml", false);
         }
-        messagesConfig = YamlConfiguration.loadConfiguration(messagesFile);
+        
+        messagesConfig = new YamlConfiguration();
+        try {
+            messagesConfig.load(messagesFile);
+        } catch (Exception e) {
+            plugin.getLogger().severe("==================================================");
+            plugin.getLogger().severe("ERRO DE SINTAXE ENCONTRADO NO: messages.yml");
+            plugin.getLogger().severe("Detalhes do Erro: " + e.getMessage());
+            plugin.getLogger().severe("Corrija as aspas ou espaços e digite /am reload");
+            plugin.getLogger().severe("==================================================");
+        }
     }
 
     private void loadMenus() {
@@ -42,7 +51,6 @@ public class FileManager {
         File menusFolder = new File(plugin.getDataFolder(), "menus");
         if (!menusFolder.exists()) {
             menusFolder.mkdirs();
-            // Salva um menu de exemplo padrão na primeira vez
             plugin.saveResource("menus/principal.yml", false);
         }
 
@@ -50,7 +58,17 @@ public class FileManager {
         if (files != null) {
             for (File file : files) {
                 String menuName = file.getName().replace(".yml", "");
-                menus.put(menuName, YamlConfiguration.loadConfiguration(file));
+                YamlConfiguration menuConfig = new YamlConfiguration();
+                try {
+                    menuConfig.load(file);
+                    menus.put(menuName, menuConfig);
+                } catch (Exception e) {
+                    plugin.getLogger().severe("==================================================");
+                    plugin.getLogger().severe("ERRO DE SINTAXE ENCONTRADO NO MENU: " + file.getName());
+                    plugin.getLogger().severe("Detalhes do Erro: " + e.getMessage());
+                    plugin.getLogger().severe("Corrija as aspas ou espaços e digite /am reload");
+                    plugin.getLogger().severe("==================================================");
+                }
             }
         }
     }

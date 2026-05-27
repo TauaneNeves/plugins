@@ -1,6 +1,7 @@
 package com.aeriaplugins.listeners;
 
 import com.aeriaplugins.plugins.Main;
+import com.aeriaplugins.utils.AeriaBoard;
 import com.aeriaplugins.utils.ChatUtils;
 import com.aeriaplugins.utils.ItemUtils;
 import org.bukkit.Bukkit;
@@ -38,8 +39,6 @@ public class PlayerEvents implements Listener {
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         if (!plugin.getConfig().getBoolean("modulos.ativar-chat")) return;
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
-        
-        // Puxando do ficheiro messages.yml
         String formato = ChatUtils.color(event.getPlayer(), plugin.getFileManager().getMessages().getString("chat.formato")
                 .replace("%message%", "%2$s").replace("%player_name%", "%1$s"), usePapi);
         event.setFormat(formato);
@@ -50,6 +49,11 @@ public class PlayerEvents implements Listener {
         Player p = event.getPlayer();
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
 
+        // --- NOVO: Cria a Scoreboard Anti-Flicker para este jogador ---
+        if (plugin.getConfig().getBoolean("modulos.ativar-scoreboard")) {
+            plugin.getBoards().put(p.getUniqueId(), new AeriaBoard(p));
+        }
+
         if (plugin.getBossBar() != null) {
             plugin.getBossBar().addPlayer(p);
         }
@@ -59,14 +63,12 @@ public class PlayerEvents implements Listener {
             if (hidden != null) p.hidePlayer(plugin, hidden);
         }
 
-        // Puxando do ficheiro messages.yml
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
             String msg = plugin.getFileManager().getMessages().getString("mensagens-entrada.entrou");
             if (msg == null || msg.isEmpty()) event.setJoinMessage(null);
             else event.setJoinMessage(ChatUtils.color(p, msg, usePapi));
         }
 
-        // Puxando do ficheiro messages.yml
         if (plugin.getConfig().getBoolean("modulos.ativar-efeitos-entrada")) {
             String title = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.titulo"), usePapi);
             String subtitle = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.subtitulo"), usePapi);
@@ -95,12 +97,18 @@ public class PlayerEvents implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        plugin.getPlayersHidden().remove(event.getPlayer().getUniqueId());
+        UUID uuid = event.getPlayer().getUniqueId();
+        
+        // --- NOVO: Remove a Scoreboard da Memória ---
+        AeriaBoard board = plugin.getBoards().remove(uuid);
+        if (board != null) board.delete();
+        
+        plugin.getPlayersHidden().remove(uuid);
+        
         if (plugin.getBossBar() != null) {
             plugin.getBossBar().removePlayer(event.getPlayer());
         }
         
-        // Puxando do ficheiro messages.yml
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
             String msg = plugin.getFileManager().getMessages().getString("mensagens-entrada.saiu");
             if (msg == null || msg.isEmpty()) event.setQuitMessage(null);

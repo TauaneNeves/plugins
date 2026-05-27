@@ -4,7 +4,9 @@ import com.aeriaplugins.commands.AeriaCommand;
 import com.aeriaplugins.listeners.MenuEvents;
 import com.aeriaplugins.listeners.PlayerEvents;
 import com.aeriaplugins.managers.FileManager;
+import com.aeriaplugins.utils.AeriaBoard;
 import com.aeriaplugins.utils.ChatUtils;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
@@ -12,17 +14,21 @@ import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 public class Main extends JavaPlugin {
 
     private final Set<UUID> playersHidden = new HashSet<>();
+    private final Map<UUID, AeriaBoard> boards = new HashMap<>(); 
     private BossBar bossBar;
     
     private NamespacedKey lobbyItemKey;
@@ -30,10 +36,10 @@ public class Main extends JavaPlugin {
     private int actionBarIndex = 0;
     
     private FileManager fileManager;
+    private Economy econ = null;
 
     @Override
     public void onEnable() {
-        // Inicializar Gestor de Ficheiros
         fileManager = new FileManager(this);
         fileManager.loadAll();
         
@@ -42,21 +48,30 @@ public class Main extends JavaPlugin {
         
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         
-        // Registar Eventos
         getServer().getPluginManager().registerEvents(new PlayerEvents(this), this);
         getServer().getPluginManager().registerEvents(new MenuEvents(this), this);
         
-        // Registar Comandos
         getCommand("aeriamenus").setExecutor(new AeriaCommand(this));
         
         if (getConfig().getBoolean("modulos.usar-placeholderapi") && Bukkit.getPluginManager().getPlugin("PlaceholderAPI") == null) {
             getLogger().warning("PlaceholderAPI ativado na config, mas nao foi encontrado no servidor!");
         }
+
+        // Modificado para respeitar a escolha do cliente na configuração
+        if (getConfig().getBoolean("modulos.usar-vault")) {
+            if (!setupEconomy()) {
+                getLogger().warning("Módulo Vault ativo na config, mas o plugin Vault ou um plugin de economia compativel nao foi encontrado!");
+            } else {
+                getLogger().info("Integraçao com o Vault realizada com sucesso!");
+            }
+        } else {
+            getLogger().info("O módulo do Vault foi desativado na config.yml pelo administrador.");
+        }
         
         startTasks();
         setupBossBar();
         
-        getLogger().info("AeriaMenus carregado com sucesso! (Modo SuperLobby Premium Ativo)");
+        getLogger().info("AeriaMenus carregado com sucesso!");
     }
 
     @Override
@@ -64,6 +79,22 @@ public class Main extends JavaPlugin {
         if (bossBar != null) {
             bossBar.removeAll();
         }
+        for (AeriaBoard board : boards.values()) {
+            board.delete();
+        }
+        boards.clear();
+    }
+
+    private boolean setupEconomy() {
+        if (getServer().getPluginManager().getPlugin("Vault") == null) {
+            return false;
+        }
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        if (rsp == null) {
+            return false;
+        }
+        econ = rsp.getProvider();
+        return econ != null;
     }
 
     public void setupBossBar() {
@@ -96,7 +127,6 @@ public class Main extends JavaPlugin {
     }
 
     private void startTasks() {
-        // Action Bar Task
         if (getConfig().getBoolean("modulos.ativar-actionbar-rotativa")) {
             long ticks = getConfig().getLong("actionbar.tempo-entre-mensagens") * 20L;
             List<String> mensagens = getConfig().getStringList("actionbar.mensagens");
@@ -116,7 +146,6 @@ public class Main extends JavaPlugin {
             }
         }
 
-        // Tablist Task
         if (getConfig().getBoolean("modulos.ativar-tablist-animada")) {
             long ticks = getConfig().getLong("tablist.tempo-atualizacao", 20L);
             new BukkitRunnable() {
@@ -138,7 +167,6 @@ public class Main extends JavaPlugin {
             }.runTaskTimer(this, 0L, ticks);
         }
 
-        // Time Task
         if (getConfig().getBoolean("modulos.ativar-clima-sempre-dia")) {
             new BukkitRunnable() {
                 @Override
@@ -152,51 +180,35 @@ public class Main extends JavaPlugin {
             }.runTaskTimer(this, 0L, 100L);
         }
         
-        // Scoreboard Task
         if (getConfig().getBoolean("modulos.ativar-scoreboard")) {
             new BukkitRunnable() {
                 @Override
                 public void run() {
+                    boolean usePapi = getConfig().getBoolean("modulos.usar-placeholderapi");
                     for (Player player : Bukkit.getOnlinePlayers()) {
-                        updateScoreboard(player);
+                        AeriaBoard board = boards.get(player.getUniqueId());
+                        if (board != null) {
+                            String titulo = ChatUtils.color(player, getConfig().getString("scoreboard.titulo"), usePapi);
+                            board.updateTitle(titulo);
+
+                            List<String> linhasRaw = getConfig().getStringList("scoreboard.linhas");
+                            List<String> linhasFormatadas = new java.util.ArrayList<>();
+                            for (String linha : linhasRaw) {
+                                linhasFormatadas.add(ChatUtils.color(player, linha.replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size())), usePapi));
+                            }
+                            board.updateLines(linhasFormatadas);
+                        }
                     }
                 }
             }.runTaskTimer(this, 0L, 20L);
         }
     }
     
-    private void updateScoreboard(Player player) {
-        org.bukkit.scoreboard.ScoreboardManager m = Bukkit.getScoreboardManager();
-        if (m == null) return;
-        org.bukkit.scoreboard.Scoreboard b = m.getNewScoreboard();
-        boolean usePapi = getConfig().getBoolean("modulos.usar-placeholderapi");
-        org.bukkit.scoreboard.Objective o = b.registerNewObjective("aeria", "dummy", ChatUtils.color(player, getConfig().getString("scoreboard.titulo"), usePapi));
-        o.setDisplaySlot(org.bukkit.scoreboard.DisplaySlot.SIDEBAR);
-
-        List<String> lines = getConfig().getStringList("scoreboard.linhas");
-        int index = lines.size();
-        for (String line : lines) {
-            String f = ChatUtils.color(player, line.replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size())), usePapi);
-            org.bukkit.scoreboard.Score score = o.getScore(f.isEmpty() ? org.bukkit.ChatColor.values()[index % 15].toString() : f);
-            score.setScore(index--);
-            try {
-                try {
-                    Class<?> paperFormatClass = Class.forName("io.papermc.paper.scoreboard.numbers.NumberFormat");
-                    Object blankFormat = paperFormatClass.getMethod("blank").invoke(null);
-                    score.getClass().getMethod("numberFormat", paperFormatClass).invoke(score, blankFormat);
-                } catch (Exception e1) {
-                    Class<?> spigotFormatClass = Class.forName("org.bukkit.scoreboard.NumberFormat");
-                    Object blankFormat = spigotFormatClass.getMethod("blank").invoke(null);
-                    score.getClass().getMethod("setNumberFormat", spigotFormatClass).invoke(score, blankFormat);
-                }
-            } catch (Exception ignored) {}
-        }
-        player.setScoreboard(b);
-    }
-
     public Set<UUID> getPlayersHidden() { return playersHidden; }
+    public Map<UUID, AeriaBoard> getBoards() { return boards; }
     public BossBar getBossBar() { return bossBar; }
     public NamespacedKey getLobbyItemKey() { return lobbyItemKey; }
     public NamespacedKey getMenuItemKey() { return menuItemKey; }
     public FileManager getFileManager() { return fileManager; }
+    public Economy getEconomy() { return econ; } 
 }

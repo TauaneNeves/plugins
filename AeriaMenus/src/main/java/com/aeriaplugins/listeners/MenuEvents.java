@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -19,7 +20,9 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class MenuEvents implements Listener {
 
@@ -27,6 +30,33 @@ public class MenuEvents implements Listener {
 
     public MenuEvents(Main plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onCommandPreprocess(PlayerCommandPreprocessEvent e) {
+        String fullCommand = e.getMessage().substring(1).toLowerCase();
+        String baseCommand = fullCommand.split(" ")[0]; 
+
+        for (Map.Entry<String, FileConfiguration> entry : plugin.getFileManager().getMenus().entrySet()) {
+            FileConfiguration menuConfig = entry.getValue();
+            
+            if (menuConfig.contains("comando")) {
+                List<String> aliases = new ArrayList<>();
+                if (menuConfig.isString("comando")) {
+                    aliases.add(menuConfig.getString("comando").toLowerCase());
+                } else if (menuConfig.isList("comando")) {
+                    for (String c : menuConfig.getStringList("comando")) {
+                        aliases.add(c.toLowerCase());
+                    }
+                }
+
+                if (aliases.contains(baseCommand)) {
+                    e.setCancelled(true);
+                    open(e.getPlayer(), entry.getKey());
+                    return;
+                }
+            }
+        }
     }
 
     @EventHandler
@@ -54,7 +84,6 @@ public class MenuEvents implements Listener {
         
         ItemMeta meta = event.getCurrentItem().getItemMeta();
         
-        // Verifica se clicou num item que pertence a um menu (criado pelo plugin)
         if (meta.getPersistentDataContainer().has(plugin.getMenuItemKey(), PersistentDataType.STRING)) {
             event.setCancelled(true);
             Player player = (Player) event.getWhoClicked();
@@ -66,9 +95,48 @@ public class MenuEvents implements Listener {
                 
                 FileConfiguration menuConfig = plugin.getFileManager().getMenu(menuKey);
                 if (menuConfig != null) {
-                    String path = "itens." + itemKey + ".acoes";
-                    if (menuConfig.contains(path)) {
-                        execute(player, menuConfig.getStringList(path));
+                    String baseItemPath = "itens." + itemKey;
+                    
+                    if (menuConfig.contains(baseItemPath + ".permissao")) {
+                        String permRequirida = menuConfig.getString(baseItemPath + ".permissao");
+                        if (!player.hasPermission(permRequirida)) {
+                            String msgErro = menuConfig.getString(baseItemPath + ".mensagem-erro", "&cVocê não tem permissão para acessar isto!");
+                            player.sendMessage(ChatUtils.color(player, msgErro, plugin.getConfig().getBoolean("modulos.usar-placeholderapi")));
+                            
+                            String somErro = menuConfig.getString(baseItemPath + ".som-erro");
+                            if (somErro != null) {
+                                try { player.playSound(player.getLocation(), Sound.valueOf(somErro.toUpperCase()), 1f, 1f); } catch (Exception ignored) {}
+                            }
+                            return; 
+                        }
+                    }
+
+                    // Verificação Inteligente de Dinheiro respeitando a Configuração Base
+                    if (menuConfig.contains(baseItemPath + ".custo")) {
+                        if (plugin.getConfig().getBoolean("modulos.usar-vault") && plugin.getEconomy() != null) {
+                            double custo = menuConfig.getDouble(baseItemPath + ".custo");
+                            if (!plugin.getEconomy().has(player, custo)) {
+                                String msgErro = menuConfig.getString(baseItemPath + ".mensagem-erro-dinheiro", "&cVocê não tem saldo suficiente. Custa: $" + custo);
+                                player.sendMessage(ChatUtils.color(player, msgErro, plugin.getConfig().getBoolean("modulos.usar-placeholderapi")));
+                                
+                                String somErro = menuConfig.getString(baseItemPath + ".som-erro");
+                                if (somErro != null) {
+                                    try { player.playSound(player.getLocation(), Sound.valueOf(somErro.toUpperCase()), 1f, 1f); } catch (Exception ignored) {}
+                                }
+                                return; 
+                            } else {
+                                plugin.getEconomy().withdrawPlayer(player, custo);
+                            }
+                        } else {
+                            // Se o menu exigir custo, mas o administrador desativou o Vault na config, bloqueia e avisa
+                            player.sendMessage(ChatColor.RED + "O sistema de economia (Vault) está desativado nas configurações deste servidor!");
+                            return;
+                        }
+                    }
+
+                    String acoesPath = baseItemPath + ".acoes";
+                    if (menuConfig.contains(acoesPath)) {
+                        execute(player, menuConfig.getStringList(acoesPath));
                     }
                 }
             }
@@ -78,7 +146,6 @@ public class MenuEvents implements Listener {
         boolean isCustomMenu = false;
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
         
-        // Bloqueia cliques normais nos inventários abertos pelo plugin
         for (String menuKey : plugin.getFileManager().getMenus().keySet()) {
             FileConfiguration menuConfig = plugin.getFileManager().getMenu(menuKey);
             String menuTitle = ChatUtils.color((Player) event.getWhoClicked(), menuConfig.getString("titulo", ""), usePapi);
@@ -93,7 +160,6 @@ public class MenuEvents implements Listener {
             return;
         }
 
-        // Bloqueia mexer no inventário do jogador (se dar itens ao entrar estiver ativo)
         if (plugin.getConfig().getBoolean("modulos.dar-itens-ao-entrar") && !event.getWhoClicked().isOp()) {
             if (event.getClickedInventory() == event.getWhoClicked().getInventory()) {
                 event.setCancelled(true);
@@ -105,7 +171,28 @@ public class MenuEvents implements Listener {
         if (a == null) return;
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
         for (String s : a) {
-            if (s.startsWith("comando: ")) p.performCommand(s.substring(9));
+            if (s.startsWith("comando: ")) {
+                String cmd = s.substring(9).replace("%player%", p.getName());
+                p.performCommand(cmd);
+            }
+            else if (s.startsWith("consola: ")) {
+                String cmd = s.substring(9).replace("%player%", p.getName());
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+            }
+            else if (s.startsWith("dinheiro: ")) {
+                // Só executa se o Vault estiver ativo na config e carregado
+                if (plugin.getConfig().getBoolean("modulos.usar-vault") && plugin.getEconomy() != null) {
+                    try {
+                        String[] parts = s.substring(10).split(" ");
+                        double amount = Double.parseDouble(parts[1]);
+                        if (parts[0].equalsIgnoreCase("dar")) {
+                            plugin.getEconomy().depositPlayer(p, amount);
+                        } else if (parts[0].equalsIgnoreCase("retirar")) {
+                            plugin.getEconomy().withdrawPlayer(p, amount);
+                        }
+                    } catch (Exception ignored) {}
+                }
+            }
             else if (s.startsWith("mensagem: ")) p.sendMessage(ChatUtils.color(p, s.substring(10), usePapi));
             else if (s.startsWith("menu: ")) open(p, s.substring(6));
             else if (s.startsWith("especial: alternar_visibilidade")) toggleVisibility(p);
@@ -159,7 +246,6 @@ public class MenuEvents implements Listener {
         if (menuConfig.contains("itens")) {
             for (String iK : menuConfig.getConfigurationSection("itens").getKeys(false)) {
                 String iP = "itens." + iK;
-                // ParseItem agora usa o config do próprio menu
                 ItemStack i = ItemUtils.parseItem(menuConfig, iP, p, usePapi);
                 
                 if (i != null) {

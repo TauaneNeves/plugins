@@ -40,17 +40,33 @@ public class ChatUtils {
     }
 
     private static String applyGradient(String text, String hexStart, String hexEnd) {
+        // Extrai formatações (Negrito, Itálico, Sublinhado, etc) para não quebrarem o gradiente
+        Matcher formatMatcher = Pattern.compile("&[l-o|r|n|m|k|L-O|R|N|M|K]").matcher(text);
+        StringBuilder formats = new StringBuilder();
+        while (formatMatcher.find()) {
+            formats.append(ChatColor.translateAlternateColorCodes('&', formatMatcher.group()));
+        }
+        
+        // Remove os símbolos de formatação do texto base que será colorido
+        String cleanText = text.replaceAll("&[l-o|r|n|m|k|L-O|R|N|M|K]", "");
+
         java.awt.Color start = java.awt.Color.decode("#" + hexStart);
         java.awt.Color end = java.awt.Color.decode("#" + hexEnd);
         StringBuilder sb = new StringBuilder();
-        int length = text.length();
+        int length = cleanText.length();
+        
         for (int i = 0; i < length; i++) {
             float ratio = (float) i / (float) (length - 1 == 0 ? 1 : length - 1);
             int red = (int) (start.getRed() * (1 - ratio) + end.getRed() * ratio);
             int green = (int) (start.getGreen() * (1 - ratio) + end.getGreen() * ratio);
             int blue = (int) (start.getBlue() * (1 - ratio) + end.getBlue() * ratio);
+            
+            // Adiciona a Cor
             sb.append(net.md_5.bungee.api.ChatColor.of(new java.awt.Color(red, green, blue)));
-            sb.append(text.charAt(i));
+            // Reaplica os formatos invisíveis (ex: §l) para cada caractere
+            sb.append(formats.toString());
+            // Adiciona a letra
+            sb.append(cleanText.charAt(i));
         }
         return sb.toString();
     }

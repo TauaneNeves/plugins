@@ -14,6 +14,8 @@ modulos:
   usar-placeholderapi: true
   ativar-tablist-animada: true
   ativar-actionbar-rotativa: true
+  # NOVO: Permite ao dono do servidor escolher se quer ou nao integrar com o Vault
+  usar-vault: true
 
 spawn:
   teleportar-ao-entrar: true
@@ -35,14 +37,18 @@ bossbar:
 scoreboard:
   titulo: "<gradient:#00d4ff:#00ff55>&lAERIA MENUS</gradient>"
   linhas:
-    - "&7-------------------"
-    - "&fOlá, &#00ff55%player_name%"
+    - "&8&m                                   "
+    - "&fPerfil:"
+    - " &8• &7Jogador: &#00ff55%player_name%"
+    - " &8• &7Cargo: &f%vault_rank%"
+    - " &8• &7Moedas: &a$%vault_eco_balance_formatted%"
     - ""
-    - "&fOnline: &#ffaa00%server_online%"
+    - "&fServidor:"
+    - " &8• &7Online: &#ffaa00%server_online%&8/&7%server_max_players%"
+    - " &8• &7Ping: &a%player_ping%ms"
     - ""
-    - "&fSuporte:"
-    - "&#ff4444suporte.aeriamenus@gmail.com"
-    - "&7-------------------"
+    - "&#00d4ffloja.aeriamenus.com"
+    - "&8&m                                   "
 
 tablist:
   tempo-atualizacao: 20
@@ -62,7 +68,7 @@ actionbar:
   mensagens:
     - "&eBem-vindo ao nosso Lobby Principal!"
     - "&aCompre VIP e ajude o servidor: &nloja.aeriamenus.com"
-    - "&bUse a Bússola em seu inventário para jogar!"
+    - "&bUse a Bússola no seu inventário para jogar!"
 
 protecoes:
   bloquear-quebra: true
@@ -77,6 +83,10 @@ itens-entrada:
     slot: 4
     custom-model-data: 0
     nome: "&#ffaa00&lSELETOR DE SERVIDORES &7(Clique)"
+    encantamentos:
+      - "unbreaking:1" 
+    flags:
+      - "HIDE_ENCHANTS"
     lore:
       - "&7Clique para abrir o menu."
     acoes:

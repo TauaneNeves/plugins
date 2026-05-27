@@ -3,6 +3,13 @@
 # ==========================================
 titulo: "&8Menu AeriaMenus"
 linhas: 3
+
+comando:
+  - "principal"
+  - "jogos"
+  - "menu"
+  - "hub"
+
 itens:
   survival:
     slot: 11
@@ -16,15 +23,56 @@ itens:
       - "mensagem: &aConectando ao Survival..."
       - "som: ENTITY_EXPERIENCE_ORB_PICKUP"
       - "servidor: survival"
-  minigames:
-    slot: 15
-    material: "base64:eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvM2M0MGMyNWE5MGYyY2I3Y2JmZjI5OGFlZjQyYjBkNTJiOTM4NjcxMzUyZjFkNTdiMTUyNTIzOTQ0ZDliYzI3YyJ9fX0="
-    custom-model-data: 0
-    nome: "&#ff4444&lMINIGAMES"
+
+  recompensa_vip:
+    slot: 13
+    
+    # --- [ESTADO 1] APARÊNCIA PADRÃO (Caso possua a permissão) ---
+    material: "DIAMOND"
+    encantamentos:
+      - "unbreaking:1"
+    flags:
+      - "HIDE_ENCHANTS"
+    nome: "&#00d4ff&lKIT VIP DIÁRIO &8• &a[LIBERADO]"
     lore:
-      - "&7Servidor de Minigames!"
-      - "&7Online lá: &e(Em Breve)"
+      - "&7Sua assinatura VIP está ativa!"
+      - "&7Clique aqui para resgatar seus prêmios."
+
+    # --- [ESTADO 2] APARÊNCIA ALTERNATIVA (Caso NÃO possua a permissão) ---
+    se-nao-tiver-permissao: "aeria.vip"
+    material-alternativo: "MINECART"
+    nome-alternativo: "&#ff4444&lKIT VIP DIÁRIO &8• &c[BLOQUEADO]"
+    lore-alternativa:
+      - "&7Este item requer vantagens de Rank."
+      - ""
+      - "&cVocê não possui este nível de acesso!"
+      - "&eAdquira vantagens em nossa loja."
+
+    permissao: "aeria.vip"
+    mensagem-erro: "&c&lERRO! &cVocê precisa ter o rank VIP para coletar esta recompensa."
+    som-erro: "ENTITY_VILLAGER_NO"
+
     acoes:
-      - "som: BLOCK_NOTE_BLOCK_BASS"
-      - "mensagem: &cEste servidor está em manutenção!"
       - "fechar"
+      - "mensagem: &aVocê resgatou seu Kit VIP com sucesso!"
+      - "som: ENTITY_PLAYER_LEVELUP"
+      - "consola: give %player% diamond 5"
+
+  # --- NOVO: EXEMPLO DE SISTEMA DE LOJA COM ECONOMIA ---
+  comprar_vida:
+    slot: 15
+    material: "APPLE"
+    nome: "&#ff4444&lMAÇÃ DA VIDA"
+    lore:
+      - "&7Compre uma maçã dourada por $500 moedas!"
+      - ""
+      - "&aClique para comprar."
+    
+    custo: 500.0
+    mensagem-erro-dinheiro: "&cVocê não tem moedas suficientes! Custa $500."
+    som-erro: "ENTITY_VILLAGER_NO"
+
+    acoes:
+      - "mensagem: &aCompra efetuada! Foram descontados $500 da sua conta."
+      - "som: ENTITY_EXPERIENCE_ORB_PICKUP"
+      - "consola: give %player% golden_apple 1"

@@ -2,7 +2,7 @@ name: AeriaMenus
 version: 1.0.0
 main: com.aeriaplugins.plugins.Main
 api-version: '1.21'
-softdepend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI, Vault]
 commands:
   aeriamenus:
     description: Comando principal do AeriaMenus
