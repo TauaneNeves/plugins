@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -54,14 +53,9 @@ public class PlayerEvents implements Listener {
             plugin.getBoards().put(p.getUniqueId(), new AeriaBoard(p));
         }
         
-        BossBar bar = plugin.getBossBar();
-        if (bar != null) {
-            bar.addPlayer(p);
-        }
-        
         for (UUID uuid : plugin.getPlayersHidden()) {
             Player hidden = Bukkit.getPlayer(uuid);
-            if (hidden != null) p.hidePlayer(plugin, hidden);
+            if (hidden != null) p.hidePlayer(hidden);
         }
         
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
@@ -70,7 +64,7 @@ public class PlayerEvents implements Listener {
             else event.setJoinMessage(ChatUtils.color(p, msg, usePapi));
         }
         
-        if (plugin.getConfig().getBoolean("modulos.ativar-efeitos-entrada")) {
+        if (plugin.getConfig().getBoolean("modulos.ativar-efeicos-entrada")) {
             String title = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.titulo"), usePapi);
             String subtitle = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.subtitulo"), usePapi);
             try {
@@ -94,16 +88,9 @@ public class PlayerEvents implements Listener {
                     ItemStack i = ItemUtils.parseItem(plugin.getConfig(), path, p, usePapi);
                     if (i != null) {
                         ItemMeta mt = i.getItemMeta();
-                        if (!plugin.isLegacy()) {
-                            try {
-                                org.bukkit.NamespacedKey lobbyKey = new org.bukkit.NamespacedKey(plugin, "lobby_item_id");
-                                mt.getPersistentDataContainer().set(lobbyKey, org.bukkit.persistence.PersistentDataType.STRING, key);
-                            } catch (Throwable ignored) {}
-                        } else {
-                            List<String> lore = mt.hasLore() ? mt.getLore() : new ArrayList<>();
-                            lore.add("§0id:" + key); 
-                            mt.setLore(lore);
-                        }
+                        List<String> lore = mt.hasLore() ? mt.getLore() : new ArrayList<>();
+                        lore.add("§0id:" + key); 
+                        mt.setLore(lore);
                         i.setItemMeta(mt);
                         p.getInventory().setItem(plugin.getConfig().getInt(path + ".slot"), i);
                     }
@@ -119,11 +106,6 @@ public class PlayerEvents implements Listener {
         if (board != null) board.delete();
         
         plugin.getPlayersHidden().remove(uuid);
-        
-        BossBar bar = plugin.getBossBar();
-        if (bar != null) {
-            bar.removePlayer(event.getPlayer());
-        }
         
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
             String msg = plugin.getFileManager().getMessages().getString("mensagens-entrada.saiu");

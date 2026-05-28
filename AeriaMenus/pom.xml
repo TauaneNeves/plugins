@@ -10,14 +10,17 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>21</java.version>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <pasta.plugins>D:\RedeMinecraft\Lobby\plugins</pasta.plugins>
     </properties>
 
     <repositories>
         <repository>
-            <id>papermc-repo</id>
-            <url>https://repo.papermc.io/repository/maven-public/</url>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
         <repository>
             <id>placeholderapi</id>
@@ -31,9 +34,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
-            <version>1.21-R0.1-SNAPSHOT</version>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>1.8.8-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -45,20 +48,54 @@
         <dependency>
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
-            <version>1.7</version>
+            <version>1.7.1</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <release>${java.version}</release>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="Copiando o plugin atualizado para o servidor de testes..."/>
+                                <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                      todir="${pasta.plugins}"/>
+                                
+                                <echo message="Derrubando o processo Java da porta 25566 para forcar o reinicio do Lobby..."/>
+                                <exec executable="cmd">
+                                    <arg value="/c"/>
+                                    <arg value="for /f &quot;tokens=5&quot; %a in ('netstat -aon ^| findstr :25566 ^| findstr LISTENING') do taskkill /f /pid %a 2&gt;nul || exit 0"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

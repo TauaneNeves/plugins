@@ -1,78 +1,58 @@
 # ==========================================
-#        MENU PRINCIPAL
+#          AERIAMENUS - MENU PRINCIPAL
 # ==========================================
-titulo: "&8Menu AeriaMenus"
+titulo: "&8Seletor de Servidores"
 linhas: 3
-
 comando:
-  - "principal"
-  - "jogos"
-  - "menu"
-  - "hub"
+  - "servers"
+  - "servidores"
+  - "bussola"
 
 itens:
-  survival:
-    slot: 11
+  skyblock:
     material: "GRASS_BLOCK"
-    custom-model-data: 0
-    nome: "&#00ff55&lSURVIVAL"
+    slot: 11
+    nome: "<gradient:#00d4ff:#00ff55>&lSKYBLOCK</gradient>"
     lore:
-      - "&7Clique para entrar no servidor Survival."
+      - "&7Crie a sua ilha flutuante, evolua geradores,"
+      - "&7venda itens na economia e conquiste o topo!"
+      - ""
+      - " &e• Status: &aDisponível"
+      - " &e• Versão: &f1.8.8 até 26.1.2"
+      - ""
+      - "&aClique esquerdo para conectar!"
     acoes:
-      - "fechar"
-      - "mensagem: &aConectando ao Survival..."
-      - "som: ENTITY_EXPERIENCE_ORB_PICKUP"
-      - "servidor: survival"
+      - "som: UI_BUTTON_CLICK"
+      - "servidor: skyblock"
 
-  recompensa_vip:
+  minigames:
+    material: "DIAMOND_SWORD"
     slot: 13
-    
-    # --- [ESTADO 1] APARÊNCIA PADRÃO (Caso possua a permissão) ---
-    material: "DIAMOND"
-    encantamentos:
-      - "unbreaking:1"
-    flags:
-      - "HIDE_ENCHANTS"
-    nome: "&#00d4ff&lKIT VIP DIÁRIO &8• &a[LIBERADO]"
+    nome: "<gradient:#ffaa00:#ff44ff>&lMINIGAMES</gradient>"
     lore:
-      - "&7Sua assinatura VIP está ativa!"
-      - "&7Clique aqui para resgatar seus prêmios."
-
-    # --- [ESTADO 2] APARÊNCIA ALTERNATIVA (Caso NÃO possua a permissão) ---
-    se-nao-tiver-permissao: "aeria.vip"
-    material-alternativo: "MINECART"
-    nome-alternativo: "&#ff4444&lKIT VIP DIÁRIO &8• &c[BLOQUEADO]"
-    lore-alternativa:
-      - "&7Este item requer vantagens de Rank."
+      - "&7Divirta-se em partidas rápidas e eletrizantes"
+      - "&7contra dezenas de jogadores em tempo real!"
       - ""
-      - "&cVocê não possui este nível de acesso!"
-      - "&eAdquira vantagens em nossa loja."
-
-    permissao: "aeria.vip"
-    mensagem-erro: "&c&lERRO! &cVocê precisa ter o rank VIP para coletar esta recompensa."
-    som-erro: "ENTITY_VILLAGER_NO"
-
+      - " &e• Status: &aDisponível"
+      - " &e• Versão: &f1.8.8 até 26.1.2"
+      - ""
+      - "&aClique esquerdo para conectar!"
     acoes:
-      - "fechar"
-      - "mensagem: &aVocê resgatou seu Kit VIP com sucesso!"
-      - "som: ENTITY_PLAYER_LEVELUP"
-      - "consola: give %player% diamond 5"
+      - "som: UI_BUTTON_CLICK"
+      - "servidor: minigames"
 
-  # --- NOVO: EXEMPLO DE SISTEMA DE LOJA COM ECONOMIA ---
-  comprar_vida:
+  survival:
+    material: "BARRIER"
     slot: 15
-    material: "APPLE"
-    nome: "&#ff4444&lMAÇÃ DA VIDA"
+    nome: "&c&lSURVIVAL &7(Em breve)"
     lore:
-      - "&7Compre uma maçã dourada por $500 moedas!"
+      - "&7Explore um mundo aberto imenso, construa vilas,"
+      - "&7proteja seus terrenos e sobreviva com amigos."
       - ""
-      - "&aClique para comprar."
-    
-    custo: 500.0
-    mensagem-erro-dinheiro: "&cVocê não tem moedas suficientes! Custa $500."
-    som-erro: "ENTITY_VILLAGER_NO"
-
+      - " &e• Status: &cBloqueado"
+      - " &e• Lançamento: &eEm breve!"
+      - ""
+      - "&7Aguarde o lançamento oficial na nossa loja."
     acoes:
-      - "mensagem: &aCompra efetuada! Foram descontados $500 da sua conta."
-      - "som: ENTITY_EXPERIENCE_ORB_PICKUP"
-      - "consola: give %player% golden_apple 1"
+      - "som: ENTITY_ITEM_BREAK"
+      - "mensagem: &c&l[!] &cEste servidor está em desenvolvimento e será lançado em breve!"

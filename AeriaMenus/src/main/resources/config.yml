@@ -1,105 +1,79 @@
 # ==========================================
-#        AERIAMENUS - CONFIGURAÇÃO BASE
+#          AERIAMENUS - CONFIGURAÇÃO
 # ==========================================
 
 modulos:
-  dar-itens-ao-entrar: true  
-  ativar-protecoes: true     
-  ativar-scoreboard: true    
-  ativar-bossbar: true
-  ativar-chat: true          
-  ativar-clima-sempre-dia: true
-  ativar-mensagens-entrada: true
-  ativar-efeitos-entrada: true
-  usar-placeholderapi: true
+  ativar-scoreboard: true
   ativar-tablist-animada: true
   ativar-actionbar-rotativa: true
-  # NOVO: Permite ao dono do servidor escolher se quer ou nao integrar com o Vault
+  ativar-chat: true
+  ativar-mensagens-entrada: true
+  ativar-efeitos-entrada: true
+  ativar-clima-sempre-dia: true
+  ativar-protecoes: true
+  dar-itens-ao-entrar: true
+  usar-placeholderapi: true
   usar-vault: true
 
-spawn:
-  teleportar-ao-entrar: true
-  altura-void: 0.0
-  local:
-    mundo: "world"
-    x: 0.0
-    y: 100.0
-    z: 0.0
-    yaw: 0.0
-    pitch: 0.0
-
-bossbar:
-  titulo: "&#00d4ff&lAERIA MENUS &8| &fBem-vindo, &a%player_name%"
-  cor: "BLUE" 
-  estilo: "SOLID" 
-  progresso: 1.0
-
+# Configuração da Scoreboard Lateral
 scoreboard:
-  titulo: "<gradient:#00d4ff:#00ff55>&lAERIA MENUS</gradient>"
+  titulo: "<gradient:#00d4ff:#00ff55>&lCRAZZYCRAFTBR</gradient>"
   linhas:
-    - "&8&m                                   "
-    - "&fPerfil:"
-    - " &8• &7Jogador: &#00ff55%player_name%"
-    - " &8• &7Cargo: &f%vault_rank%"
-    - " &8• &7Moedas: &a$%vault_eco_balance_formatted%"
+    - "&7&m------------------------"
+    - " &fPerfil:"
+    - "  &8• &7Jogador: &b%player_name%"
+    - "  &8• &7Cargo: &a%vault_rank%"
+    - "  &8• &7Moedas: &e%vault_eco_balance_formatted%"
     - ""
-    - "&fServidor:"
-    - " &8• &7Online: &#ffaa00%server_online%&8/&7%server_max_players%"
-    - " &8• &7Ping: &a%player_ping%ms"
+    - " &fServidor:"
+    - "  &8• &7Online: &a%online%&7/&220"
+    - "  &8• &7Ping: &a%player_ping%ms"
     - ""
-    - "&#00d4ffloja.aeriamenus.com"
-    - "&8&m                                   "
+    - " <gradient:#00d4ff:#00ff55>jogar.crazzycraftbr.com</gradient>"
+    - "&7&m------------------------"
 
+# Configuração da Tablist (Tab)
 tablist:
   tempo-atualizacao: 20
   header:
     - ""
-    - "<gradient:#00d4ff:#00ff55>&lAERIA MENUS - REDE DE JOGOS</gradient>"
-    - "&7Bem-vindo(a) de volta, &f%player_name%&7!"
+    - "    <gradient:#00d4ff:#00ff55>&lREDE CRAZZYCRAFTBR</gradient>    "
+    - "  &7Fica por dentro das novidades no nosso Discord!  "
     - ""
   footer:
     - ""
-    - "&eAcesse nossa loja: &f&nloja.aeriamenus.com"
-    - "&7Jogadores conectados: &a%server_online%"
+    - "  &fJogadores Online: &a%online% &7| &fPing: &a%player_ping%ms  "
+    - "  &eLoja: &fcompra.crazzycraftbr.com  "
     - ""
 
+# Configuração da ActionBar Rotativa (Acima do Inventário)
 actionbar:
   tempo-entre-mensagens: 5
   mensagens:
-    - "&eBem-vindo ao nosso Lobby Principal!"
-    - "&aCompre VIP e ajude o servidor: &nloja.aeriamenus.com"
-    - "&bUse a Bússola no seu inventário para jogar!"
+    - "&eSeja bem-vindo à nossa rede de servidores!"
+    - "&aUse a &b&lBÚSSOLA &ano seu inventário para selecionar um jogo."
+    - "&dAdquira cargos e vantagens incríveis na nossa loja!"
 
-protecoes:
-  bloquear-quebra: true
-  bloquear-colocacao: true
-  bloquear-drop: true
-  bloquear-fome: true
-  bloquear-dano: true
+# Configuração do Sistema de Spawn e Queda no Vazio
+spawn:
+  teleportar-ao-entrar: true
+  altura-void: 10.0
+  local:
+    mundo: "lobby"
+    x: 86.5
+    y: 135.0
+    z: 4.0
+    yaw: 0.0
+    pitch: 0.0
 
+# Itens que o jogador recebe ao entrar no Lobby
 itens-entrada:
   bussola:
     material: "COMPASS"
     slot: 4
-    custom-model-data: 0
-    nome: "&#ffaa00&lSELETOR DE SERVIDORES &7(Clique)"
-    encantamentos:
-      - "unbreaking:1" 
-    flags:
-      - "HIDE_ENCHANTS"
+    nome: "<gradient:#00d4ff:#00ff55>&lSELETOR DE SERVIDORES &7(Clique)</gradient>"
     lore:
-      - "&7Clique para abrir o menu."
+      - "&7Clique com o botão direito para"
+      - "&7abrir o menu principal da rede."
     acoes:
-      - "som: UI_BUTTON_CLICK"
-      - "menu: principal"
-  magica:
-    material: "CLOCK"
-    slot: 8
-    custom-model-data: 0
-    nome: "&#ff44ff&lOCULTAR JOGADORES &7(Clique)"
-    lore:
-      - "&7Clique para esconder ou mostrar"
-      - "&7os outros jogadores."
-    acoes:
-      - "som: UI_BUTTON_CLICK"
-      - "especial: alternar_visibilidade"
+      - "comando: servidores"

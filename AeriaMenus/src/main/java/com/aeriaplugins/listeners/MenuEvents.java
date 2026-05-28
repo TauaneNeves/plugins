@@ -19,6 +19,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,19 +67,10 @@ public class MenuEvents implements Listener {
         ItemMeta meta = i.getItemMeta();
         
         String key = null;
-        if (!plugin.isLegacy()) {
-            try {
-                org.bukkit.NamespacedKey lobbyKey = new org.bukkit.NamespacedKey(plugin, "lobby_item_id");
-                if (meta.getPersistentDataContainer().has(lobbyKey, org.bukkit.persistence.PersistentDataType.STRING)) {
-                    key = meta.getPersistentDataContainer().get(lobbyKey, org.bukkit.persistence.PersistentDataType.STRING);
-                }
-            } catch (Throwable ignored) {}
-        } else {
-            if (meta.hasLore() && !meta.getLore().isEmpty()) {
-                String lastLine = meta.getLore().get(meta.getLore().size() - 1);
-                if (lastLine.startsWith("§0id:")) {
-                    key = lastLine.substring(5);
-                }
+        if (meta.hasLore() && !meta.getLore().isEmpty()) {
+            String lastLine = meta.getLore().get(meta.getLore().size() - 1);
+            if (lastLine.startsWith("§0id:")) {
+                key = lastLine.substring(5);
             }
         }
 
@@ -98,19 +92,10 @@ public class MenuEvents implements Listener {
         ItemMeta meta = event.getCurrentItem().getItemMeta();
         String data = null;
 
-        if (!plugin.isLegacy()) {
-            try {
-                org.bukkit.NamespacedKey menuKey = new org.bukkit.NamespacedKey(plugin, "menu_item_id");
-                if (meta.getPersistentDataContainer().has(menuKey, org.bukkit.persistence.PersistentDataType.STRING)) {
-                    data = meta.getPersistentDataContainer().get(menuKey, org.bukkit.persistence.PersistentDataType.STRING);
-                }
-            } catch (Throwable ignored) {}
-        } else {
-            if (meta.hasLore() && !meta.getLore().isEmpty()) {
-                String lastLine = meta.getLore().get(meta.getLore().size() - 1);
-                if (lastLine.startsWith("§0menu:")) {
-                    data = lastLine.substring(7);
-                }
+        if (meta.hasLore() && !meta.getLore().isEmpty()) {
+            String lastLine = meta.getLore().get(meta.getLore().size() - 1);
+            if (lastLine.startsWith("§0menu:")) {
+                data = lastLine.substring(7);
             }
         }
 
@@ -212,25 +197,73 @@ public class MenuEvents implements Listener {
     }
 
     private void conectarServidor(Player p, String serverName) {
-        try {
-            ByteArrayOutputStream b = new ByteArrayOutputStream();
-            DataOutputStream out = new DataOutputStream(b);
-            out.writeUTF("Connect");
-            out.writeUTF(serverName);
-            p.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
-        } catch (Exception e) {
-            p.sendMessage(ChatColor.RED + "Erro ao conectar.");
+        int portaAlvo = 25566; 
+        if (serverName.equalsIgnoreCase("lobby")) {
+            portaAlvo = 25566;
+        } else if (serverName.equalsIgnoreCase("minigames")) {
+            portaAlvo = 25567;
+        } else if (serverName.equalsIgnoreCase("skyblock")) {
+            portaAlvo = 25568;
+        }
+
+        final int porta = portaAlvo;
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            if (isServerOnline("localhost", porta)) {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    try {
+                        ByteArrayOutputStream b = new ByteArrayOutputStream();
+                        DataOutputStream out = new DataOutputStream(b);
+                        out.writeUTF("Connect");
+                        out.writeUTF(serverName);
+                        p.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
+                    } catch (Exception e) {
+                        p.sendMessage(ChatColor.RED + "Erro interno ao conectar.");
+                    }
+                });
+            } else {
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
+                    String formatName = serverName.substring(0, 1).toUpperCase() + serverName.substring(1).toLowerCase();
+                    
+                    p.sendMessage("");
+                    p.sendMessage(ChatUtils.color(p, " &c&m━&4&m━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━", usePapi));
+                    p.sendMessage(ChatUtils.color(p, "  <gradient:#ff3333:#ffaa00>&lCONEXÃO FALHOU — REDE</gradient>", usePapi));
+                    p.sendMessage("");
+                    p.sendMessage(ChatUtils.color(p, "  &8• &fServidor: &e&l" + formatName, usePapi));
+                    p.sendMessage(ChatUtils.color(p, "  &8• &fEstado: &c&nManutenção / Offline", usePapi));
+                    p.sendMessage("");
+                    p.sendMessage(ChatUtils.color(p, "  &7Estamos a preparar novidades. Por favor, aguarde", usePapi));
+                    p.sendMessage(ChatUtils.color(p, "  &7alguns minutos e tente conectar novamente!", usePapi));
+                    p.sendMessage(ChatUtils.color(p, " &c&m━&4&m━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━━&c&m━━&4&m━", usePapi));
+                    p.sendMessage("");
+                    
+                    try {
+                        p.playSound(p.getLocation(), Sound.valueOf("ENTITY_ITEM_BREAK"), 1f, 1f);
+                    } catch (Throwable t) {
+                        try { p.playSound(p.getLocation(), Sound.valueOf("ITEM_BREAK"), 1f, 1f); } catch (Throwable ignored) {}
+                    }
+                });
+            }
+        });
+    }
+
+    private boolean isServerOnline(String ip, int port) {
+        try (Socket socket = new Socket()) {
+            socket.connect(new InetSocketAddress(ip, port), 600); 
+            return true;
+        } catch (IOException e) {
+            return false;
         }
     }
 
     private void toggleVisibility(Player p) {
         if (plugin.getPlayersHidden().contains(p.getUniqueId())) {
             plugin.getPlayersHidden().remove(p.getUniqueId());
-            for (Player target : Bukkit.getOnlinePlayers()) p.showPlayer(plugin, target);
+            for (Player target : Bukkit.getOnlinePlayers()) p.showPlayer(target);
             p.sendMessage(ChatColor.GREEN + "Jogadores visíveis!");
         } else {
             plugin.getPlayersHidden().add(p.getUniqueId());
-            for (Player target : Bukkit.getOnlinePlayers()) p.hidePlayer(plugin, target);
+            for (Player target : Bukkit.getOnlinePlayers()) p.hidePlayer(target);
             p.sendMessage(ChatColor.RED + "Jogadores ocultos!");
         }
     }
@@ -249,16 +282,9 @@ public class MenuEvents implements Listener {
                 
                 if (i != null) {
                     ItemMeta m = i.getItemMeta();
-                    if (!plugin.isLegacy()) {
-                        try {
-                            org.bukkit.NamespacedKey menuKey = new org.bukkit.NamespacedKey(plugin, "menu_item_id");
-                            m.getPersistentDataContainer().set(menuKey, org.bukkit.persistence.PersistentDataType.STRING, k + ";" + iK);
-                        } catch (Throwable ignored) {}
-                    } else {
-                        List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
-                        lore.add("§0menu:" + k + ";" + iK); 
-                        m.setLore(lore);
-                    }
+                    List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
+                    lore.add("§0menu:" + k + ";" + iK); 
+                    m.setLore(lore);
                     i.setItemMeta(m);
                     inv.setItem(menuConfig.getInt(iP + ".slot"), i);
                 }

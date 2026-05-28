@@ -9,14 +9,13 @@ import com.aeriaplugins.utils.ChatUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -28,23 +27,14 @@ public class Main extends JavaPlugin {
 
     private final Set<UUID> playersHidden = new HashSet<>();
     private final Map<UUID, AeriaBoard> boards = new HashMap<>(); 
-    private Object bossBarObject; 
     
     private int actionBarIndex = 0;
     private FileManager fileManager;
     private Economy econ = null;
-    private boolean isLegacy = false;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        
-        try {
-            Class.forName("org.bukkit.NamespacedKey");
-            isLegacy = false;
-        } catch (ClassNotFoundException e) {
-            isLegacy = true;
-        }
         
         fileManager = new FileManager(this);
         fileManager.loadAll();
@@ -71,19 +61,12 @@ public class Main extends JavaPlugin {
         }
         
         startTasks();
-        setupBossBar();
         
-        getLogger().info("AeriaMenus carregado com sucesso! Suporte Hibrido (1.8.8 - 26.1.2) Ativo.");
+        getLogger().info("AeriaMenus carregado com sucesso! Suporte Hibrido Habilitado.");
     }
 
     @Override
     public void onDisable() {
-        try {
-            if (bossBarObject != null && bossBarObject instanceof BossBar) {
-                ((BossBar) bossBarObject).removeAll();
-            }
-        } catch (Throwable ignored) {}
-        
         for (AeriaBoard board : boards.values()) {
             board.delete();
         }
@@ -102,44 +85,6 @@ public class Main extends JavaPlugin {
         return econ != null;
     }
 
-    public void setupBossBar() {
-        if (isLegacy) return;
-        
-        try {
-            if (bossBarObject != null && bossBarObject instanceof BossBar) {
-                ((BossBar) bossBarObject).removeAll();
-            }
-            if (getConfig().getBoolean("modulos.ativar-bossbar")) {
-                BarColor bc = BarColor.valueOf(getConfig().getString("bossbar.cor", "BLUE"));
-                BarStyle bs = BarStyle.valueOf(getConfig().getString("bossbar.estilo", "SOLID"));
-                
-                BossBar bar = Bukkit.createBossBar("Carregando...", bc, bs);
-                bar.setProgress(getConfig().getDouble("bossbar.progresso", 1.0));
-                
-                for (Player p : Bukkit.getOnlinePlayers()) {
-                    bar.addPlayer(p);
-                }
-                
-                bossBarObject = bar;
-
-                new BukkitRunnable() {
-                    @Override
-                    public void run() {
-                        if (bossBarObject != null && bossBarObject instanceof BossBar) {
-                            BossBar currentBar = (BossBar) bossBarObject;
-                            for (Player p : Bukkit.getOnlinePlayers()) {
-                                 String title = ChatUtils.color(p, getConfig().getString("bossbar.titulo").replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size())), getConfig().getBoolean("modulos.usar-placeholderapi"));
-                                 currentBar.setTitle(title);
-                            }
-                        }
-                    }
-                }.runTaskTimer(this, 0L, 40L);
-            }
-        } catch (Throwable e) {
-            bossBarObject = null;
-        }
-    }
-
     private void startTasks() {
         if (getConfig().getBoolean("modulos.ativar-actionbar-rotativa")) {
             long ticks = getConfig().getLong("actionbar.tempo-entre-mensagens") * 20L;
@@ -153,8 +98,20 @@ public class Main extends JavaPlugin {
                         actionBarIndex++;
                         for (Player p : Bukkit.getOnlinePlayers()) {
                             String msg = ChatUtils.color(p, rawMsg, getConfig().getBoolean("modulos.usar-placeholderapi"));
+                            
                             try {
-                                p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, net.md_5.bungee.api.chat.TextComponent.fromLegacyText(msg));
+                                Object textComp = Class.forName("net.md_5.bungee.api.chat.TextComponent")
+                                        .getMethod("fromLegacyText", String.class).invoke(null, msg);
+                                
+                                try {
+                                    Class<?> chatMsgTypeClass = Class.forName("net.md_5.bungee.api.ChatMessageType");
+                                    Object actionBarEnum = chatMsgTypeClass.getField("ACTION_BAR").get(null);
+                                    Method sendMsgMethod = p.spigot().getClass().getMethod("sendMessage", chatMsgTypeClass, Class.forName("[Lnet.md_5.bungee.api.chat.BaseComponent;"));
+                                    sendMsgMethod.invoke(p.spigot(), actionBarEnum, textComp);
+                                } catch (Throwable t) {
+                                    Method sendMsgLegacy = p.spigot().getClass().getMethod("sendMessage", Class.forName("[Lnet.md_5.bungee.api.chat.BaseComponent;"));
+                                    sendMsgLegacy.invoke(p.spigot(), textComp);
+                                }
                             } catch (Throwable ignored) {}
                         }
                     }
@@ -177,9 +134,40 @@ public class Main extends JavaPlugin {
                         for (String f : getConfig().getStringList("tablist.footer")) {
                             footerB.append(ChatUtils.color(p, f, usePapi)).append("\n");
                         }
+                        
+                        String hStr = headerB.toString().trim();
+                        String fStr = footerB.toString().trim();
+                        
                         try {
-                            p.setPlayerListHeaderFooter(headerB.toString().trim(), footerB.toString().trim());
-                        } catch (Throwable ignored) {}
+                            Method modernMethod = p.getClass().getMethod("setPlayerListHeaderFooter", String.class, String.class);
+                            modernMethod.invoke(p, hStr, fStr);
+                        } catch (Throwable t1) {
+                            try {
+                                Class<?> componentClass = Class.forName("[Lnet.md_5.bungee.api.chat.BaseComponent;");
+                                Object headerComp = Class.forName("net.md_5.bungee.api.chat.TextComponent").getMethod("fromLegacyText", String.class).invoke(null, hStr);
+                                Object footerComp = Class.forName("net.md_5.bungee.api.chat.TextComponent").getMethod("fromLegacyText", String.class).invoke(null, fStr);
+                                
+                                Method legacyMethod = p.getClass().getMethod("setPlayerListHeaderFooter", componentClass, componentClass);
+                                legacyMethod.invoke(p, headerComp, footerComp);
+                            } catch (Throwable t2) {
+                                try {
+                                    Object craftPlayer = p.getClass().getMethod("getHandle").invoke(p);
+                                    Object playerConnection = craftPlayer.getClass().getField("playerConnection").get(craftPlayer);
+                                    Class<?> ichat = Class.forName("net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3] + ".IChatBaseComponent");
+                                    Class<?> chatSerializer = Class.forName("net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3] + ".IChatBaseComponent$ChatSerializer");
+                                    
+                                    Object tabHeader = chatSerializer.getMethod("a", String.class).invoke(null, "{\"text\":\"" + hStr + "\"}");
+                                    Object tabFooter = chatSerializer.getMethod("a", String.class).invoke(null, "{\"text\":\"" + fStr + "\"}");
+                                    
+                                    Class<?> packetClass = Class.forName("net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3] + ".PacketPlayOutPlayerListHeaderFooter");
+                                    Constructor<?> packetConstructor = packetClass.getConstructor(ichat);
+                                    Object packet = packetConstructor.newInstance(tabHeader);
+                                    packet.getClass().getField("b").set(packet, tabFooter);
+                                    
+                                    playerConnection.getClass().getMethod("sendPacket", Class.forName("net.minecraft.server." + Bukkit.getServer().getClass().getPackage().getName().split("\\.")[3] + ".Packet")).invoke(playerConnection, packet);
+                                } catch (Throwable ignored) {}
+                            }
+                        }
                     }
                 }
             }.runTaskTimer(this, 0L, ticks);
@@ -203,6 +191,8 @@ public class Main extends JavaPlugin {
                 @Override
                 public void run() {
                     boolean usePapi = getConfig().getBoolean("modulos.usar-placeholderapi");
+                    int onlineCount = Bukkit.getOnlinePlayers().size();
+                    
                     for (Player player : Bukkit.getOnlinePlayers()) {
                         AeriaBoard board = boards.get(player.getUniqueId());
                         if (board != null) {
@@ -212,7 +202,9 @@ public class Main extends JavaPlugin {
                             List<String> linhasRaw = getConfig().getStringList("scoreboard.linhas");
                             List<String> linhasFormatadas = new java.util.ArrayList<>();
                             for (String linha : linhasRaw) {
-                                linhasFormatadas.add(ChatUtils.color(player, linha.replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size())), usePapi));
+                                // Substituição direta e segura antes do parse de cores para evitar o bug do f1
+                                String processada = linha.replace("%online%", String.valueOf(onlineCount));
+                                linhasFormatadas.add(ChatUtils.color(player, processada, usePapi));
                             }
                             board.updateLines(linhasFormatadas);
                         }
@@ -226,12 +218,4 @@ public class Main extends JavaPlugin {
     public Map<UUID, AeriaBoard> getBoards() { return boards; }
     public FileManager getFileManager() { return fileManager; }
     public Economy getEconomy() { return econ; } 
-    public boolean isLegacy() { return isLegacy; }
-    
-    public BossBar getBossBar() { 
-        if (bossBarObject instanceof BossBar) {
-            return (BossBar) bossBarObject;
-        }
-        return null;
-    } 
 }

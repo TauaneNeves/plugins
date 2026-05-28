@@ -14,6 +14,16 @@ public class AeriaBoard {
     private final Scoreboard scoreboard;
     private Objective objective;
     private final Player player;
+    private static boolean isLegacyServer = true;
+
+    static {
+        try {
+            Team.class.getMethod("setColor", ChatColor.class);
+            isLegacyServer = false;
+        } catch (Throwable e) {
+            isLegacyServer = true;
+        }
+    }
 
     public AeriaBoard(Player player) {
         this.player = player;
@@ -21,7 +31,9 @@ public class AeriaBoard {
         this.scoreboard = manager != null ? manager.getNewScoreboard() : null;
         
         if (this.scoreboard != null) {
-            // Tenta registrar usando o método moderno de 3 parâmetros, caso falhe (1.8.8), usa o clássico de 2 parâmetros
+            Objective old = this.scoreboard.getObjective("aeria");
+            if (old != null) old.unregister();
+
             try {
                 this.objective = (Objective) Scoreboard.class.getMethod("registerNewObjective", String.class, String.class, String.class)
                         .invoke(this.scoreboard, "aeria", "dummy", "aeria");
@@ -49,39 +61,50 @@ public class AeriaBoard {
         int size = Math.min(lines.size(), 15);
         
         for (int i = 0; i < 15; i++) {
-            Team team = scoreboard.getTeam("line_" + i);
-            if (team == null) {
-                team = scoreboard.registerNewTeam("line_" + i);
-            }
-            
             String entry = ChatColor.values()[i].toString() + ChatColor.RESET;
-            if (!team.hasEntry(entry)) {
-                team.addEntry(entry);
-            }
+            Team team = scoreboard.getTeam("line_" + i);
             
             if (i < size) {
+                if (team == null) {
+                    team = scoreboard.registerNewTeam("line_" + i);
+                }
+                if (!team.hasEntry(entry)) {
+                    team.addEntry(entry);
+                }
+
                 String line = lines.get(size - 1 - i);
                 
-                // Divisor de caracteres seguro para evitar desconexão/kick na 1.8.8
-                if (line.length() > 16) {
-                    team.setPrefix(line.substring(0, 16));
-                    String suffix = line.substring(16);
-                    team.setSuffix(suffix.length() > 16 ? suffix.substring(0, 16) : suffix);
+                if (isLegacyServer) {
+                    if (line.length() > 16) {
+                        String prefix = line.substring(0, 16);
+                        String lastColors = ChatColor.getLastColors(prefix);
+                        String suffix = lastColors + line.substring(16);
+                        
+                        team.setPrefix(prefix);
+                        team.setSuffix(suffix.length() > 16 ? suffix.substring(0, 16) : suffix);
+                    } else {
+                        team.setPrefix(line);
+                        team.setSuffix("");
+                    }
                 } else {
-                    team.setPrefix(line);
-                    team.setSuffix("");
+                    try {
+                        team.setPrefix(line);
+                        team.setSuffix("");
+                    } catch (Throwable ignored) {}
                 }
                 
                 objective.getScore(entry).setScore(i + 1);
                 
-                // Ocultação nativa dos números vermelhos (Disponível a partir do Paper 1.20.6+)
                 try {
-                    Class<?> paperFormatClass = Class.forName("io.papermc.paper.scoreboard.numbers.NumberFormat");
-                    Object blankFormat = paperFormatClass.getMethod("blank").invoke(null);
-                    Object scoreObj = objective.getScore(entry);
-                    scoreObj.getClass().getMethod("numberFormat", paperFormatClass).invoke(scoreObj, blankFormat);
+                    java.lang.reflect.Method method = objective.getScore(entry).getClass().getMethod("numberFormat", 
+                            Class.forName("io.papermc.paper.scoreboard.numbers.NumberFormat"));
+                    Object blankFormat = Class.forName("io.papermc.paper.scoreboard.numbers.NumberFormat").getMethod("blank").invoke(null);
+                    method.invoke(objective.getScore(entry), blankFormat);
                 } catch (Exception ignored) {}
             } else {
+                if (team != null) {
+                    team.unregister();
+                }
                 scoreboard.resetScores(entry);
             }
         }
@@ -91,6 +114,11 @@ public class AeriaBoard {
         if (player != null && player.isOnline()) {
             ScoreboardManager m = Bukkit.getScoreboardManager();
             if (m != null) player.setScoreboard(m.getMainScoreboard());
+        }
+        if (scoreboard != null) {
+            for (Team team : scoreboard.getTeams()) {
+                try { team.unregister(); } catch (Throwable ignored) {}
+            }
         }
     }
 }

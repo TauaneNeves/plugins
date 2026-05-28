@@ -36,7 +36,6 @@ public class AeriaCommand implements CommandExecutor {
                 return true;
             }
             plugin.getFileManager().loadAll();
-            plugin.setupBossBar();
             sender.sendMessage(ChatUtils.color(player, "<gradient:#00d4ff:#00ff55>&l[AeriaMenus]&r &aConfigurações recarregadas com sucesso!", usePapi));
             return true;
         }
@@ -79,16 +78,9 @@ public class AeriaCommand implements CommandExecutor {
                     org.bukkit.inventory.ItemStack i = com.aeriaplugins.utils.ItemUtils.parseItem(menuConfig, iP, alvo, usePapi);
                     if (i != null) {
                         org.bukkit.inventory.meta.ItemMeta m = i.getItemMeta();
-                        if (!plugin.isLegacy()) {
-                            try {
-                                org.bukkit.NamespacedKey menuKeyObject = new org.bukkit.NamespacedKey(plugin, "menu_item_id");
-                                m.getPersistentDataContainer().set(menuKeyObject, org.bukkit.persistence.PersistentDataType.STRING, menuKey + ";" + iK);
-                            } catch (Throwable ignored) {}
-                        } else {
-                            List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
-                            lore.add("§0menu:" + menuKey + ";" + iK);
-                            m.setLore(lore);
-                        }
+                        List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
+                        lore.add("§0menu:" + menuKey + ";" + iK);
+                        m.setLore(lore);
                         i.setItemMeta(m);
                         inv.setItem(menuConfig.getInt(iP + ".slot"), i);
                     }
