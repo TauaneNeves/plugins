@@ -1,58 +1,112 @@
 # ==========================================
-#          AERIAMENUS - MENU PRINCIPAL
+#          MENU PRINCIPAL - SELETOR
 # ==========================================
-titulo: "&8Seletor de Servidores"
+
+titulo: "<gradient:#00d4ff:#00ff55>&lSELETOR DE SERVIDORES</gradient>"
 linhas: 3
 comando:
-  - "servers"
+  - "menu"
+  - "principal"
   - "servidores"
-  - "bussola"
 
 itens:
-  skyblock:
+  Skyblock:
     material: "GRASS_BLOCK"
     slot: 11
-    nome: "<gradient:#00d4ff:#00ff55>&lSKYBLOCK</gradient>"
+    nome: "<gradient:#00ff55:#00ffff>&lSKYBLOCK EVOLUÇÃO</gradient>"
     lore:
-      - "&7Crie a sua ilha flutuante, evolua geradores,"
-      - "&7venda itens na economia e conquiste o topo!"
+      - "&7Crie a sua ilha flutuante,"
+      - "&7evolua e domine a economia."
       - ""
-      - " &e• Status: &aDisponível"
-      - " &e• Versão: &f1.8.8 até 26.1.2"
+      - "&fJogadores: &a%bungee_skyblock%"
       - ""
-      - "&aClique esquerdo para conectar!"
+      - "&e» Clique para jogar!"
     acoes:
-      - "som: UI_BUTTON_CLICK"
       - "servidor: skyblock"
+      - "som: UI_BUTTON_CLICK"
 
-  minigames:
+  Minigames:
     material: "DIAMOND_SWORD"
     slot: 13
-    nome: "<gradient:#ffaa00:#ff44ff>&lMINIGAMES</gradient>"
+    nome: "<gradient:#ffaa00:#ff3333>&lMINIGAMES ARENA</gradient>"
     lore:
-      - "&7Divirta-se em partidas rápidas e eletrizantes"
-      - "&7contra dezenas de jogadores em tempo real!"
+      - "&7Divirta-se em nossos modos"
+      - "&7de jogo totalmente customizados."
       - ""
-      - " &e• Status: &aDisponível"
-      - " &e• Versão: &f1.8.8 até 26.1.2"
+      - "&fJogadores: &a%bungee_minigames%"
       - ""
-      - "&aClique esquerdo para conectar!"
+      - "&e» Clique para jogar!"
     acoes:
-      - "som: UI_BUTTON_CLICK"
       - "servidor: minigames"
+      - "som: UI_BUTTON_CLICK"
 
-  survival:
-    material: "BARRIER"
+  Survival:
+    material: "DIAMOND_PICKAXE"
     slot: 15
-    nome: "&c&lSURVIVAL &7(Em breve)"
+    nome: "<gradient:#ff00ff:#ffaa00>&lSURVIVAL CUSTOM</gradient>"
     lore:
-      - "&7Explore um mundo aberto imenso, construa vilas,"
-      - "&7proteja seus terrenos e sobreviva com amigos."
+      - "&7Explore um mundo aberto,"
+      - "&7construa vilas e faça clãs."
       - ""
-      - " &e• Status: &cBloqueado"
-      - " &e• Lançamento: &eEm breve!"
+      - "&fJogadores: &a%bungee_survival%"
       - ""
-      - "&7Aguarde o lançamento oficial na nossa loja."
+      - "&e» Clique para jogar!"
     acoes:
-      - "som: ENTITY_ITEM_BREAK"
-      - "mensagem: &c&l[!] &cEste servidor está em desenvolvimento e será lançado em breve!"
+      - "servidor: survival"
+      - "som: UI_BUTTON_CLICK"
+
+  # Moldura Estética de Vidro Preto (Agora convertendo corretamente sem virar pedras)
+  v1:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 0
+    nome: "&f"
+    lore: []
+    acoes: []
+  v2:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 1
+    nome: "&f"
+    lore: []
+    acoes: []
+  v3:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 7
+    nome: "&f"
+    lore: []
+    acoes: []
+  v4:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 8
+    nome: "&f"
+    lore: []
+    acoes: []
+  v5:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 9
+    nome: "&f"
+    lore: []
+    acoes: []
+  v6:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 17
+    nome: "&f"
+    lore: []
+    acoes: []
+  v7:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 19
+    nome: "&f"
+    lore: []
+    acoes: []
+  v8:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 25
+    nome: "&f"
+    lore: []
+    acoes: []
+  v9:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 26
+    nome: "&f"
+    lore: []
+    acoes: []

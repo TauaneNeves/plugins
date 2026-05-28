@@ -176,21 +176,22 @@ public class MenuEvents implements Listener {
         if (a == null) return;
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
         for (String s : a) {
-            if (s.startsWith("comando: ")) {
-                p.performCommand(s.substring(9).replace("%player%", p.getName()));
-            } else if (s.startsWith("consola: ")) {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), s.substring(9).replace("%player%", p.getName()));
-            } else if (s.startsWith("mensagem: ")) {
-                p.sendMessage(ChatUtils.color(p, s.substring(10), usePapi));
-            } else if (s.startsWith("menu: ")) {
-                open(p, s.substring(6));
-            } else if (s.startsWith("especial: alternar_visibilidade")) {
+            String linha = s.trim(); // Limpa os espaços invisíveis do YAML
+            if (linha.startsWith("comando: ")) {
+                p.performCommand(linha.substring(9).replace("%player%", p.getName()));
+            } else if (linha.startsWith("consola: ")) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), linha.substring(9).replace("%player%", p.getName()));
+            } else if (linha.startsWith("mensagem: ")) {
+                p.sendMessage(ChatUtils.color(p, linha.substring(10), usePapi));
+            } else if (linha.startsWith("menu: ")) {
+                open(p, linha.substring(6).trim());
+            } else if (linha.equalsIgnoreCase("especial: alternar_visibilidade")) {
                 toggleVisibility(p);
-            } else if (s.startsWith("servidor: ")) {
-                conectarServidor(p, s.substring(10));
-            } else if (s.startsWith("som: ")) {
-                try { p.playSound(p.getLocation(), Sound.valueOf(s.substring(5).toUpperCase()), 1f, 1f); } catch(Exception ignored) {}
-            } else if (s.equalsIgnoreCase("fechar")) {
+            } else if (linha.startsWith("servidor: ")) {
+                conectarServidor(p, linha.substring(10).trim());
+            } else if (linha.startsWith("som: ")) {
+                try { p.playSound(p.getLocation(), Sound.valueOf(linha.substring(5).toUpperCase().trim()), 1f, 1f); } catch(Exception ignored) {}
+            } else if (linha.equalsIgnoreCase("fechar")) {
                 p.closeInventory();
             }
         }
@@ -216,9 +217,7 @@ public class MenuEvents implements Listener {
                         out.writeUTF("Connect");
                         out.writeUTF(serverName);
                         p.sendPluginMessage(plugin, "BungeeCord", b.toByteArray());
-                    } catch (Exception e) {
-                        p.sendMessage(ChatColor.RED + "Erro interno ao conectar.");
-                    }
+                    } catch (Exception ignored) {}
                 });
             } else {
                 Bukkit.getScheduler().runTask(plugin, () -> {
@@ -252,7 +251,7 @@ public class MenuEvents implements Listener {
             socket.connect(new InetSocketAddress(ip, port), 600); 
             return true;
         } catch (IOException e) {
-            return false;
+            return false; 
         }
     }
 

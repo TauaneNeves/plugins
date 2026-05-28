@@ -13,6 +13,7 @@ import java.util.UUID;
 
 public class ItemUtils {
 
+    @SuppressWarnings("deprecation")
     public static ItemStack parseItem(FileConfiguration config, String path, Player p, boolean usePapi) {
         String matPath = path + ".material";
         String nomePath = path + ".nome";
@@ -54,26 +55,62 @@ public class ItemUtils {
             }
         } else {
             Material materialEscolhido = null;
-            try {
-                materialEscolhido = Material.valueOf(matStr.toUpperCase());
-            } catch (Exception e) {
-                if (matStr.equalsIgnoreCase("PLAYER_HEAD") || matStr.equalsIgnoreCase("PLAYER_WALL_HEAD")) {
-                    try { materialEscolhido = Material.valueOf("SKULL_ITEM"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
-                } else if (matStr.equalsIgnoreCase("GRASS_BLOCK")) {
-                    try { materialEscolhido = Material.valueOf("GRASS"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
-                } else if (matStr.equalsIgnoreCase("CLOCK") || matStr.equalsIgnoreCase("WATCH")) {
-                    try { materialEscolhido = Material.valueOf("WATCH"); } catch(Exception ex) { try { materialEscolhido = Material.valueOf("CLOCK"); } catch(Exception exc) { materialEscolhido = Material.STONE; } }
-                } else if (matStr.equalsIgnoreCase("REDSTONE_TORCH") || matStr.equalsIgnoreCase("REDSTONE_TORCH_OFF")) {
-                    try { materialEscolhido = Material.valueOf("REDSTONE_TORCH_ON"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
-                } else {
-                    materialEscolhido = Material.STONE;
+            String upperMat = matStr.toUpperCase().trim();
+            short durabilidade = 0;
+
+            // Tradutor inteligente e dinâmico de Painéis de Vidro Preto (Evita virar Pedra)
+            if (upperMat.equals("BLACK_STAINED_GLASS_PANE") || upperMat.equals("STAINED_GLASS_PANE")) {
+                try {
+                    materialEscolhido = Material.valueOf("BLACK_STAINED_GLASS_PANE");
+                } catch (IllegalArgumentException e) {
+                    try {
+                        materialEscolhido = Material.valueOf("STAINED_GLASS_PANE");
+                        durabilidade = 15; // ID da cor preta na 1.8.8
+                    } catch (IllegalArgumentException ex) {
+                        materialEscolhido = Material.AIR;
+                    }
+                }
+            }
+            // Tradutor inteligente de Relógio
+            else if (upperMat.equals("CLOCK") || upperMat.equals("WATCH")) {
+                try {
+                    materialEscolhido = Material.valueOf("CLOCK");
+                } catch (IllegalArgumentException e) {
+                    try {
+                        materialEscolhido = Material.valueOf("WATCH");
+                    } catch (IllegalArgumentException ex) {
+                        materialEscolhido = Material.STONE;
+                    }
+                }
+            }
+            // Tradutor inteligente de Espadas Modernas (Netherite -> Diamante na 1.8)
+            else if (upperMat.equals("NETHERITE_SWORD")) {
+                try {
+                    materialEscolhido = Material.valueOf("NETHERITE_SWORD");
+                } catch (IllegalArgumentException e) {
+                    materialEscolhido = Material.DIAMOND_SWORD;
+                }
+            }
+            else {
+                try {
+                    materialEscolhido = Material.valueOf(upperMat);
+                } catch (Exception e) {
+                    if (upperMat.equals("PLAYER_HEAD") || upperMat.equals("PLAYER_WALL_HEAD")) {
+                        try { materialEscolhido = Material.valueOf("SKULL_ITEM"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
+                    } else if (upperMat.equals("GRASS_BLOCK")) {
+                        try { materialEscolhido = Material.valueOf("GRASS"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
+                    } else if (upperMat.equals("REDSTONE_TORCH") || upperMat.equals("REDSTONE_TORCH_OFF")) {
+                        try { materialEscolhido = Material.valueOf("REDSTONE_TORCH_ON"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
+                    } else {
+                        materialEscolhido = Material.STONE;
+                    }
                 }
             }
             
             if (materialEscolhido != null && materialEscolhido.name().equals("SKULL_ITEM")) {
                 item = new ItemStack(materialEscolhido, 1, (short) 3);
             } else if (materialEscolhido != null) {
-                item = new ItemStack(materialEscolhido);
+                item = new ItemStack(materialEscolhido, 1, durabilidade);
             } else {
                 item = new ItemStack(Material.STONE);
             }

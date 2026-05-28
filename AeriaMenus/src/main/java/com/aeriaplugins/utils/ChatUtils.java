@@ -12,7 +12,6 @@ public class ChatUtils {
 
     static {
         try {
-            // Verifica se o Spigot/Paper possui suporte nativo a Hexadecimal moderno
             net.md_5.bungee.api.ChatColor.class.getMethod("of", String.class);
             supportsHex = true;
         } catch (Throwable e) {
@@ -23,12 +22,11 @@ public class ChatUtils {
     public static String color(Player p, String message, boolean usePapi) {
         if (message == null || message.isEmpty()) return "";
         
-        // Aplica o PlaceholderAPI se estiver ativo e disponível
         if (p != null && usePapi && Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             message = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(p, message);
         }
 
-        // 1. Processamento Inteligente de Gradientes <gradient:#hex:#hex>Texto</gradient>
+        // Traduz gradientes avançados <gradient:#hex:#hex>Texto</gradient>
         Pattern gradientPattern = Pattern.compile("<gradient:#([A-Fa-f0-9]{6}):#([A-Fa-f0-9]{6})>(.*?)</gradient>");
         Matcher gradientMatcher = gradientPattern.matcher(message);
         StringBuffer buffer = new StringBuffer();
@@ -41,14 +39,13 @@ public class ChatUtils {
             if (supportsHex) {
                 gradientMatcher.appendReplacement(buffer, applyGradientModern(text, hexStart, hexEnd));
             } else {
-                // Fallback para a 1.8.8 (Pega apenas a cor inicial e limpa a tag)
                 gradientMatcher.appendReplacement(buffer, ChatColor.translateAlternateColorCodes('&', "&f" + text));
             }
         }
         gradientMatcher.appendTail(buffer);
         message = buffer.toString();
 
-        // 2. Processamento de Cores Hexadecimais Simples &#hex (26.1.2)
+        // Traduz cores hexadecimais simples &#hex para a 26.1.2
         Pattern hexPattern = Pattern.compile("&#([A-Fa-f0-9]{6})");
         Matcher hexMatcher = hexPattern.matcher(message);
         StringBuffer hexBuffer = new StringBuffer();
@@ -68,13 +65,12 @@ public class ChatUtils {
         hexMatcher.appendTail(hexBuffer);
         message = hexBuffer.toString();
 
-        // 3. Processamento de Cores Clássicas (&1, &a, etc) garantindo remoção de fantasmas tipo f1
+        // Traduz códigos clássicos (&a, &b, &l) de forma limpa e nativa
         return ChatColor.translateAlternateColorCodes('&', message);
     }
 
     private static String applyGradientModern(String text, String hexStart, String hexEnd) {
         try {
-            // Filtra e guarda estilos extras contidos no texto (Ex: &l, &o)
             Matcher formatMatcher = Pattern.compile("&[l-o|r|n|m|k|L-O|R|N|M|K]").matcher(text);
             StringBuilder formats = new StringBuilder();
             while (formatMatcher.find()) {
