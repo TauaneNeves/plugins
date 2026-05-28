@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,12 +24,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.weather.WeatherChangeEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.persistence.PersistentDataType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class PlayerEvents implements Listener {
-
     private final Main plugin;
 
     public PlayerEvents(Main plugin) {
@@ -48,36 +49,43 @@ public class PlayerEvents implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
-
-        // --- NOVO: Cria a Scoreboard Anti-Flicker para este jogador ---
+        
         if (plugin.getConfig().getBoolean("modulos.ativar-scoreboard")) {
             plugin.getBoards().put(p.getUniqueId(), new AeriaBoard(p));
         }
-
-        if (plugin.getBossBar() != null) {
-            plugin.getBossBar().addPlayer(p);
+        
+        BossBar bar = plugin.getBossBar();
+        if (bar != null) {
+            bar.addPlayer(p);
         }
-
+        
         for (UUID uuid : plugin.getPlayersHidden()) {
             Player hidden = Bukkit.getPlayer(uuid);
             if (hidden != null) p.hidePlayer(plugin, hidden);
         }
-
+        
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
             String msg = plugin.getFileManager().getMessages().getString("mensagens-entrada.entrou");
             if (msg == null || msg.isEmpty()) event.setJoinMessage(null);
             else event.setJoinMessage(ChatUtils.color(p, msg, usePapi));
         }
-
+        
         if (plugin.getConfig().getBoolean("modulos.ativar-efeitos-entrada")) {
             String title = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.titulo"), usePapi);
             String subtitle = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.subtitulo"), usePapi);
-            p.sendTitle(title, subtitle, 10, 70, 20);
-            try { p.playSound(p.getLocation(), Sound.valueOf(plugin.getFileManager().getMessages().getString("efeitos-entrada.som")), 1.0f, 1.0f); } catch (Exception ignored) {}
+            try {
+                p.sendTitle(title, subtitle);
+            } catch (Throwable t) {
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "title " + p.getName() + " title " + title);
+                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "title " + p.getName() + " subtitle " + subtitle);
+            }
+            try { 
+                p.playSound(p.getLocation(), Sound.valueOf(plugin.getFileManager().getMessages().getString("efeitos-entrada.som")), 1.0f, 1.0f); 
+            } catch (Exception ignored) {}
         }
-
+        
         if (plugin.getConfig().getBoolean("spawn.teleportar-ao-entrar")) teleportToSpawn(p);
-
+        
         if (plugin.getConfig().getBoolean("modulos.dar-itens-ao-entrar")) {
             p.getInventory().clear();
             if (plugin.getConfig().contains("itens-entrada")) {
@@ -86,7 +94,16 @@ public class PlayerEvents implements Listener {
                     ItemStack i = ItemUtils.parseItem(plugin.getConfig(), path, p, usePapi);
                     if (i != null) {
                         ItemMeta mt = i.getItemMeta();
-                        mt.getPersistentDataContainer().set(plugin.getLobbyItemKey(), PersistentDataType.STRING, key);
+                        if (!plugin.isLegacy()) {
+                            try {
+                                org.bukkit.NamespacedKey lobbyKey = new org.bukkit.NamespacedKey(plugin, "lobby_item_id");
+                                mt.getPersistentDataContainer().set(lobbyKey, org.bukkit.persistence.PersistentDataType.STRING, key);
+                            } catch (Throwable ignored) {}
+                        } else {
+                            List<String> lore = mt.hasLore() ? mt.getLore() : new ArrayList<>();
+                            lore.add("§0id:" + key); 
+                            mt.setLore(lore);
+                        }
                         i.setItemMeta(mt);
                         p.getInventory().setItem(plugin.getConfig().getInt(path + ".slot"), i);
                     }
@@ -98,15 +115,14 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        
-        // --- NOVO: Remove a Scoreboard da Memória ---
         AeriaBoard board = plugin.getBoards().remove(uuid);
         if (board != null) board.delete();
         
         plugin.getPlayersHidden().remove(uuid);
         
-        if (plugin.getBossBar() != null) {
-            plugin.getBossBar().removePlayer(event.getPlayer());
+        BossBar bar = plugin.getBossBar();
+        if (bar != null) {
+            bar.removePlayer(event.getPlayer());
         }
         
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
@@ -129,30 +145,11 @@ public class PlayerEvents implements Listener {
         }
     }
 
-    @EventHandler 
-    public void onBreak(BlockBreakEvent e) { 
-        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); 
-    }
-
-    @EventHandler 
-    public void onPlace(BlockPlaceEvent e) { 
-        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); 
-    }
-
-    @EventHandler 
-    public void onDrop(PlayerDropItemEvent e) { 
-        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); 
-    }
-
-    @EventHandler 
-    public void onFood(FoodLevelChangeEvent e) { 
-        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes")) e.setCancelled(true); 
-    }
-
-    @EventHandler 
-    public void onDamage(EntityDamageEvent e) { 
-        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && e.getEntity() instanceof Player) e.setCancelled(true); 
-    }
+    @EventHandler public void onBreak(BlockBreakEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); }
+    @EventHandler public void onPlace(BlockPlaceEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); }
+    @EventHandler public void onDrop(PlayerDropItemEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); }
+    @EventHandler public void onFood(FoodLevelChangeEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes")) e.setCancelled(true); }
+    @EventHandler public void onDamage(EntityDamageEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && e.getEntity() instanceof Player) e.setCancelled(true); }
 
     private void teleportToSpawn(Player p) {
         if (!plugin.getConfig().contains("spawn.local.mundo")) return;

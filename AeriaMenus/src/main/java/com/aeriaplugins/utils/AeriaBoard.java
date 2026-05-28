@@ -8,12 +8,11 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.scoreboard.Team;
-
 import java.util.List;
 
 public class AeriaBoard {
     private final Scoreboard scoreboard;
-    private final Objective objective;
+    private Objective objective;
     private final Player player;
 
     public AeriaBoard(Player player) {
@@ -22,8 +21,17 @@ public class AeriaBoard {
         this.scoreboard = manager != null ? manager.getNewScoreboard() : null;
         
         if (this.scoreboard != null) {
-            this.objective = scoreboard.registerNewObjective("aeria", "dummy", "Carregando...");
-            this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+            // Tenta registrar usando o método moderno de 3 parâmetros, caso falhe (1.8.8), usa o clássico de 2 parâmetros
+            try {
+                this.objective = (Objective) Scoreboard.class.getMethod("registerNewObjective", String.class, String.class, String.class)
+                        .invoke(this.scoreboard, "aeria", "dummy", "aeria");
+            } catch (Throwable t) {
+                this.objective = this.scoreboard.registerNewObjective("aeria", "dummy");
+            }
+            
+            if (this.objective != null) {
+                this.objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+            }
             player.setScoreboard(this.scoreboard);
         } else {
             this.objective = null;
@@ -38,9 +46,7 @@ public class AeriaBoard {
 
     public void updateLines(List<String> lines) {
         if (scoreboard == null || objective == null) return;
-        
-        // O limite nativo do Minecraft para scoreboards laterais é de 15 linhas
-        int size = Math.min(lines.size(), 15); 
+        int size = Math.min(lines.size(), 15);
         
         for (int i = 0; i < 15; i++) {
             Team team = scoreboard.getTeam("line_" + i);
@@ -48,29 +54,35 @@ public class AeriaBoard {
                 team = scoreboard.registerNewTeam("line_" + i);
             }
             
-            // Cria identificadores únicos invisíveis para cada linha
             String entry = ChatColor.values()[i].toString() + ChatColor.RESET;
             if (!team.hasEntry(entry)) {
                 team.addEntry(entry);
             }
-
+            
             if (i < size) {
-                // A lista vem de cima para baixo, mas a scoreboard lê de baixo para cima
                 String line = lines.get(size - 1 - i);
-                team.setPrefix(line);
                 
-                org.bukkit.scoreboard.Score score = objective.getScore(entry);
-                score.setScore(i + 1);
+                // Divisor de caracteres seguro para evitar desconexão/kick na 1.8.8
+                if (line.length() > 16) {
+                    team.setPrefix(line.substring(0, 16));
+                    String suffix = line.substring(16);
+                    team.setSuffix(suffix.length() > 16 ? suffix.substring(0, 16) : suffix);
+                } else {
+                    team.setPrefix(line);
+                    team.setSuffix("");
+                }
                 
-                // Oculta os números vermelhos laterais (Exclusivo Paper 1.20.6+)
+                objective.getScore(entry).setScore(i + 1);
+                
+                // Ocultação nativa dos números vermelhos (Disponível a partir do Paper 1.20.6+)
                 try {
                     Class<?> paperFormatClass = Class.forName("io.papermc.paper.scoreboard.numbers.NumberFormat");
                     Object blankFormat = paperFormatClass.getMethod("blank").invoke(null);
-                    score.getClass().getMethod("numberFormat", paperFormatClass).invoke(score, blankFormat);
+                    Object scoreObj = objective.getScore(entry);
+                    scoreObj.getClass().getMethod("numberFormat", paperFormatClass).invoke(scoreObj, blankFormat);
                 } catch (Exception ignored) {}
-                
             } else {
-                scoreboard.resetScores(entry); // Apaga as linhas que sobrarem
+                scoreboard.resetScores(entry);
             }
         }
     }

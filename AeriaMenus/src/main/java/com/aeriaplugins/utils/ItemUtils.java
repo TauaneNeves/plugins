@@ -2,17 +2,12 @@ package com.aeriaplugins.utils;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import com.destroystokyo.paper.profile.PlayerProfile;
-import com.destroystokyo.paper.profile.ProfileProperty;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -20,61 +15,92 @@ import java.util.UUID;
 public class ItemUtils {
 
     public static ItemStack parseItem(FileConfiguration config, String path, Player p, boolean usePapi) {
-        // Define as chaves de caminhos padrão
         String matPath = path + ".material";
         String nomePath = path + ".nome";
         String lorePath = path + ".lore";
         String cmdPath = path + ".custom-model-data";
-        String encPath = path + ".encantamentos";
-        String flagsPath = path + ".flags";
-
-        // --- Sistema de Aparência Alternativa por Permissão ---
-        if (config.contains(path + ".se-nao-tiver-permissao") && p != null) {
-            String permissaoAparencia = config.getString(path + ".se-nao-tiver-permissao");
-            if (!p.hasPermission(permissaoAparencia)) {
-                // Se o jogador NÃO tiver a permissão requisitada, redireciona para as configurações alternativas
-                if (config.contains(path + ".material-alternativo")) matPath = path + ".material-alternativo";
-                if (config.contains(path + ".nome-alternativo")) nomePath = path + ".nome-alternativo";
-                if (config.contains(path + ".lore-alternativa")) lorePath = path + ".lore-alternativa";
-                if (config.contains(path + ".custom-model-data-alternativo")) cmdPath = path + ".custom-model-data-alternativo";
-                if (config.contains(path + ".encantamentos-alternativos")) encPath = path + ".encantamentos-alternativos";
-                if (config.contains(path + ".flags-alternativas")) flagsPath = path + ".flags-alternativas";
-            }
-        }
-
+        
         String matStr = config.getString(matPath);
         if (matStr == null) return null;
         
         ItemStack item;
         
         if (matStr.startsWith("base64:")) {
-            item = new ItemStack(Material.PLAYER_HEAD);
-            SkullMeta meta = (SkullMeta) item.getItemMeta();
-            PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID());
-            profile.setProperty(new ProfileProperty("textures", matStr.substring(7)));
-            meta.setPlayerProfile(profile);
-            item.setItemMeta(meta);
-        } else {
+            // Suporte universal a cabecas customizadas texturizadas
+            ItemStack base64Skull;
             try {
-                item = new ItemStack(Material.valueOf(matStr.toUpperCase()));
+                base64Skull = new ItemStack(Material.valueOf("PLAYER_HEAD"));
+            } catch (IllegalArgumentException e) {
+                // Fallback caso o material PLAYER_HEAD nao exista (Minecraft 1.8.8)
+                try {
+                    base64Skull = new ItemStack(Material.valueOf("SKULL_ITEM"), 1, (short) 3);
+                } catch (Exception ex) {
+                    base64Skull = new ItemStack(Material.STONE);
+                }
+            }
+            
+            item = base64Skull;
+            SkullMeta meta = (SkullMeta) item.getItemMeta();
+            
+            if (meta != null) {
+                try {
+                    Class<?> playerProfileClass = Class.forName("com.destroystokyo.paper.profile.PlayerProfile");
+                    Object profile = Bukkit.class.getMethod("createProfile", UUID.class).invoke(null, UUID.randomUUID());
+                    Object properties = profile.getClass().getMethod("getProperties").invoke(profile);
+                    Class<?> profilePropertyClass = Class.forName("com.destroystokyo.paper.profile.ProfileProperty");
+                    Object property = profilePropertyClass.getConstructor(String.class, String.class).newInstance("textures", matStr.substring(7));
+                    properties.getClass().getMethod("add", Object.class).invoke(properties, property);
+                    meta.getClass().getMethod("setPlayerProfile", playerProfileClass).invoke(meta, profile);
+                } catch (Exception t) {
+                    // Fallback estavel de assinatura para cabecas no Spigot antigo 1.8.8
+                    meta.setOwner(p != null ? p.getName() : "Steve");
+                }
+                item.setItemMeta(meta);
+            }
+        } else {
+            // Conversao de materiais e nomes antigos da 1.8.8 ate as versoes mais novas 26.1.2
+            Material materialEscolhido = null;
+            try {
+                materialEscolhido = Material.valueOf(matStr.toUpperCase());
             } catch (Exception e) {
+                // Dicionario inteligente de Fallbacks de materiais da 26.1.2 para a 1.8.8
+                if (matStr.equalsIgnoreCase("PLAYER_HEAD") || matStr.equalsIgnoreCase("PLAYER_WALL_HEAD")) {
+                    try { materialEscolhido = Material.valueOf("SKULL_ITEM"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
+                } else if (matStr.equalsIgnoreCase("GRASS_BLOCK")) {
+                    try { materialEscolhido = Material.valueOf("GRASS"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
+                } else if (matStr.equalsIgnoreCase("CLOCK") || matStr.equalsIgnoreCase("WATCH")) {
+                    try { materialEscolhido = Material.valueOf("WATCH"); } catch(Exception ex) { materialEscolhido = Material.CLOCK; }
+                } else if (matStr.equalsIgnoreCase("REDSTONE_TORCH") || matStr.equalsIgnoreCase("REDSTONE_TORCH_OFF")) {
+                    try { materialEscolhido = Material.valueOf("REDSTONE_TORCH_ON"); } catch(Exception ex) { materialEscolhido = Material.STONE; }
+                } else {
+                    materialEscolhido = Material.STONE;
+                }
+            }
+            
+            // Tratamento especifico de Data/Durabilidade para cabecas na versao antiga 1.8.8
+            if (materialEscolhido != null && materialEscolhido.name().equals("SKULL_ITEM")) {
+                item = new ItemStack(materialEscolhido, 1, (short) 3);
+            } else if (materialEscolhido != null) {
+                item = new ItemStack(materialEscolhido);
+            } else {
                 item = new ItemStack(Material.STONE);
             }
         }
         
         ItemMeta m = item.getItemMeta();
         if (m == null) return item;
-
-        // --- PLACEHOLDERS DINÂMICOS NO NOME ---
+        
         if (config.contains(nomePath)) {
             m.setDisplayName(ChatUtils.color(p, config.getString(nomePath), usePapi));
         }
         
+        // CustomModelData (Ignorado silenciosamente na 1.8.8 e lido nativamente na 26.1.2)
         if (config.contains(cmdPath) && config.getInt(cmdPath) > 0) {
-            m.setCustomModelData(config.getInt(cmdPath));
+            try {
+                m.setCustomModelData(config.getInt(cmdPath));
+            } catch (Throwable ignored) {}
         }
-
-        // --- PLACEHOLDERS DINÂMICOS NA LORE ---
+        
         List<String> lore = new ArrayList<>();
         if (config.contains(lorePath)) {
             for (String l : config.getStringList(lorePath)) {
@@ -82,39 +108,12 @@ public class ItemUtils {
             }
         }
         m.setLore(lore);
-
-        // Suporte a Encantamentos
-        if (config.contains(encPath)) {
-            for (String enc : config.getStringList(encPath)) {
-                String[] split = enc.split(":");
-                if (split.length == 2) {
-                    try {
-                        String enchantName = split[0].toLowerCase();
-                        int level = Integer.parseInt(split[1]);
-                        
-                        Enchantment enchantment = org.bukkit.Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchantName));
-                        if (enchantment != null) {
-                            m.addEnchant(enchantment, level, true);
-                        } else {
-                            Enchantment legacy = Enchantment.getByName(enchantName.toUpperCase());
-                            if (legacy != null) {
-                                m.addEnchant(legacy, level, true);
-                            }
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
-        }
-
-        // Suporte a ItemFlags (Bandeiras)
-        if (config.contains(flagsPath)) {
-            for (String flagStr : config.getStringList(flagsPath)) {
-                try {
-                    m.addItemFlags(ItemFlag.valueOf(flagStr.toUpperCase()));
-                } catch (Exception ignored) {}
-            }
-        }
-
+        
+        // Remove visibilidade de encantamentos de forma segura nas flags
+        try {
+            m.addItemFlags(ItemFlag.valueOf("HIDE_ENCHANTS"));
+        } catch (Throwable ignored) {}
+        
         item.setItemMeta(m);
         return item;
     }

@@ -8,7 +8,6 @@ import com.aeriaplugins.utils.AeriaBoard;
 import com.aeriaplugins.utils.ChatUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
@@ -29,22 +28,26 @@ public class Main extends JavaPlugin {
 
     private final Set<UUID> playersHidden = new HashSet<>();
     private final Map<UUID, AeriaBoard> boards = new HashMap<>(); 
-    private BossBar bossBar;
+    private Object bossBarObject; 
     
-    private NamespacedKey lobbyItemKey;
-    private NamespacedKey menuItemKey;
     private int actionBarIndex = 0;
-    
     private FileManager fileManager;
     private Economy econ = null;
+    private boolean isLegacy = false;
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+        
+        try {
+            Class.forName("org.bukkit.NamespacedKey");
+            isLegacy = false;
+        } catch (ClassNotFoundException e) {
+            isLegacy = true;
+        }
+        
         fileManager = new FileManager(this);
         fileManager.loadAll();
-        
-        lobbyItemKey = new NamespacedKey(this, "lobby_item_id");
-        menuItemKey = new NamespacedKey(this, "menu_item_id");
         
         getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         
@@ -57,7 +60,6 @@ public class Main extends JavaPlugin {
             getLogger().warning("PlaceholderAPI ativado na config, mas nao foi encontrado no servidor!");
         }
 
-        // Modificado para respeitar a escolha do cliente na configuração
         if (getConfig().getBoolean("modulos.usar-vault")) {
             if (!setupEconomy()) {
                 getLogger().warning("Módulo Vault ativo na config, mas o plugin Vault ou um plugin de economia compativel nao foi encontrado!");
@@ -71,14 +73,17 @@ public class Main extends JavaPlugin {
         startTasks();
         setupBossBar();
         
-        getLogger().info("AeriaMenus carregado com sucesso!");
+        getLogger().info("AeriaMenus carregado com sucesso! Suporte Hibrido (1.8.8 - 26.1.2) Ativo.");
     }
 
     @Override
     public void onDisable() {
-        if (bossBar != null) {
-            bossBar.removeAll();
-        }
+        try {
+            if (bossBarObject != null && bossBarObject instanceof BossBar) {
+                ((BossBar) bossBarObject).removeAll();
+            }
+        } catch (Throwable ignored) {}
+        
         for (AeriaBoard board : boards.values()) {
             board.delete();
         }
@@ -98,31 +103,40 @@ public class Main extends JavaPlugin {
     }
 
     public void setupBossBar() {
-        if (bossBar != null) {
-            bossBar.removeAll();
-        }
-        if (getConfig().getBoolean("modulos.ativar-bossbar")) {
-            BarColor bc = BarColor.valueOf(getConfig().getString("bossbar.cor", "BLUE"));
-            BarStyle bs = BarStyle.valueOf(getConfig().getString("bossbar.estilo", "SOLID"));
-            
-            bossBar = Bukkit.createBossBar("Carregando...", bc, bs);
-            bossBar.setProgress(getConfig().getDouble("bossbar.progresso", 1.0));
-            
-            for (Player p : Bukkit.getOnlinePlayers()) {
-                bossBar.addPlayer(p);
+        if (isLegacy) return;
+        
+        try {
+            if (bossBarObject != null && bossBarObject instanceof BossBar) {
+                ((BossBar) bossBarObject).removeAll();
             }
+            if (getConfig().getBoolean("modulos.ativar-bossbar")) {
+                BarColor bc = BarColor.valueOf(getConfig().getString("bossbar.cor", "BLUE"));
+                BarStyle bs = BarStyle.valueOf(getConfig().getString("bossbar.estilo", "SOLID"));
+                
+                BossBar bar = Bukkit.createBossBar("Carregando...", bc, bs);
+                bar.setProgress(getConfig().getDouble("bossbar.progresso", 1.0));
+                
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    bar.addPlayer(p);
+                }
+                
+                bossBarObject = bar;
 
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    if (bossBar != null) {
-                        for (Player p : Bukkit.getOnlinePlayers()) {
-                             String title = ChatUtils.color(p, getConfig().getString("bossbar.titulo").replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size())), getConfig().getBoolean("modulos.usar-placeholderapi"));
-                             bossBar.setTitle(title);
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        if (bossBarObject != null && bossBarObject instanceof BossBar) {
+                            BossBar currentBar = (BossBar) bossBarObject;
+                            for (Player p : Bukkit.getOnlinePlayers()) {
+                                 String title = ChatUtils.color(p, getConfig().getString("bossbar.titulo").replace("%online%", String.valueOf(Bukkit.getOnlinePlayers().size())), getConfig().getBoolean("modulos.usar-placeholderapi"));
+                                 currentBar.setTitle(title);
+                            }
                         }
                     }
-                }
-            }.runTaskTimer(this, 0L, 40L);
+                }.runTaskTimer(this, 0L, 40L);
+            }
+        } catch (Throwable e) {
+            bossBarObject = null;
         }
     }
 
@@ -139,7 +153,9 @@ public class Main extends JavaPlugin {
                         actionBarIndex++;
                         for (Player p : Bukkit.getOnlinePlayers()) {
                             String msg = ChatUtils.color(p, rawMsg, getConfig().getBoolean("modulos.usar-placeholderapi"));
-                            p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, net.md_5.bungee.api.chat.TextComponent.fromLegacyText(msg));
+                            try {
+                                p.spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, net.md_5.bungee.api.chat.TextComponent.fromLegacyText(msg));
+                            } catch (Throwable ignored) {}
                         }
                     }
                 }.runTaskTimer(this, 0L, ticks);
@@ -161,7 +177,9 @@ public class Main extends JavaPlugin {
                         for (String f : getConfig().getStringList("tablist.footer")) {
                             footerB.append(ChatUtils.color(p, f, usePapi)).append("\n");
                         }
-                        p.setPlayerListHeaderFooter(headerB.toString().trim(), footerB.toString().trim());
+                        try {
+                            p.setPlayerListHeaderFooter(headerB.toString().trim(), footerB.toString().trim());
+                        } catch (Throwable ignored) {}
                     }
                 }
             }.runTaskTimer(this, 0L, ticks);
@@ -206,9 +224,14 @@ public class Main extends JavaPlugin {
     
     public Set<UUID> getPlayersHidden() { return playersHidden; }
     public Map<UUID, AeriaBoard> getBoards() { return boards; }
-    public BossBar getBossBar() { return bossBar; }
-    public NamespacedKey getLobbyItemKey() { return lobbyItemKey; }
-    public NamespacedKey getMenuItemKey() { return menuItemKey; }
     public FileManager getFileManager() { return fileManager; }
     public Economy getEconomy() { return econ; } 
+    public boolean isLegacy() { return isLegacy; }
+    
+    public BossBar getBossBar() { 
+        if (bossBarObject instanceof BossBar) {
+            return (BossBar) bossBarObject;
+        }
+        return null;
+    } 
 }
