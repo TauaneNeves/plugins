@@ -45,13 +45,29 @@ public class PlayerEvents implements Listener {
     // ------------------------------------------------------------------------
     @EventHandler
     public void onPlayerChat(AsyncPlayerChatEvent event) {
-        if (!plugin.getConfig().getBoolean("modulos.ativar-chat")) return;
+
+        if (!plugin.getConfig().getBoolean("modulos.ativar-chat"))
+            return;
+
+        Player player = event.getPlayer();
+
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
-        String formato = ChatUtils.color(event.getPlayer(), plugin.getFileManager().getMessages().getString("chat.formato")
-                .replace("%message%", "%2$s").replace("%player_name%", "%1$s"), usePapi);
+
+        String formato = plugin.getFileManager()
+                .getMessages()
+                .getString("chat.formato");
+
+        formato = ChatUtils.color(player, formato, usePapi);
+
+        // Bukkit placeholders do chat
+        formato = formato
+                .replace("%player_name%", player.getName())
+                .replace("%message%", "%2$s")
+                .replace("%player%", "%1$s");
+
         event.setFormat(formato);
     }
-    
+
     // ------------------------------------------------------------------------
     // EVENTO: Quando um jogador ENTRA no servidor (Join)
     // Cria scoreboard, teleporta pro spawn, dá os itens (bússola/relógio).
@@ -60,43 +76,67 @@ public class PlayerEvents implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player p = event.getPlayer();
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
-        
+
         // 1. Cria a Scoreboard
         if (plugin.getConfig().getBoolean("modulos.ativar-scoreboard")) {
             plugin.getBoards().put(p.getUniqueId(), new AeriaBoard(p));
         }
-        
-        // 2. Se um jogador que já estava no servidor estiver "escondido", oculta ele pro cara novo que entrou
+
+        // 2. Se um jogador que já estava no servidor estiver "escondido", oculta ele
+        // pro cara novo que entrou
         for (UUID uuid : plugin.getPlayersHidden()) {
             Player hidden = Bukkit.getPlayer(uuid);
-            if (hidden != null) p.hidePlayer(hidden);
+            if (hidden != null)
+                p.hidePlayer(hidden);
         }
-        
+
         // 3. Manda mensagem no chat de que entrou
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
-            String msg = plugin.getFileManager().getMessages().getString("mensagens-entrada.entrou");
-            if (msg == null || msg.isEmpty()) event.setJoinMessage(null);
-            else event.setJoinMessage(ChatUtils.color(p, msg, usePapi));
+
+            String msg = plugin.getFileManager()
+                    .getMessages()
+                    .getString("mensagens-entrada.entrou");
+
+            if (msg == null || msg.isEmpty()) {
+
+                event.setJoinMessage(null);
+
+            } else {
+
+                msg = msg.replace("%player_name%", p.getName());
+
+                event.setJoinMessage(
+                        ChatUtils.color(
+                                p,
+                                msg,
+                                usePapi));
+            }
         }
-        
+
         // 4. Manda título gigante na tela e toca som
         if (plugin.getConfig().getBoolean("modulos.ativar-efeicos-entrada")) {
-            String title = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.titulo"), usePapi);
-            String subtitle = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.subtitulo"), usePapi);
+            String title = ChatUtils.color(p, plugin.getFileManager().getMessages().getString("efeitos-entrada.titulo"),
+                    usePapi);
+            String subtitle = ChatUtils.color(p,
+                    plugin.getFileManager().getMessages().getString("efeitos-entrada.subtitulo"), usePapi);
             try {
                 p.sendTitle(title, subtitle);
             } catch (Throwable t) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "title " + p.getName() + " title " + title);
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "title " + p.getName() + " subtitle " + subtitle);
             }
-            try { 
-                p.playSound(p.getLocation(), Sound.valueOf(plugin.getFileManager().getMessages().getString("efeitos-entrada.som")), 1.0f, 1.0f); 
-            } catch (Exception ignored) {}
+            try {
+                p.playSound(p.getLocation(),
+                        Sound.valueOf(plugin.getFileManager().getMessages().getString("efeitos-entrada.som")), 1.0f,
+                        1.0f);
+            } catch (Exception ignored) {
+            }
         }
-        
+
         // 5. Teleporta para o spawn central
-        if (plugin.getConfig().getBoolean("spawn.teleportar-ao-entrar")) teleportToSpawn(p);
-        
+        if (plugin.getConfig().getBoolean("spawn.teleportar-ao-entrar"))
+            teleportToSpawn(p);
+
         // 6. Entrega os Itens (Bússola e Relógio) no inventário
         if (plugin.getConfig().getBoolean("modulos.dar-itens-ao-entrar")) {
             p.getInventory().clear();
@@ -124,23 +164,35 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
-        
+
         AeriaBoard board = plugin.getBoards().remove(uuid);
-        if (board != null) board.delete();
-        
+        if (board != null)
+            board.delete();
+
         Object bar = plugin.getBossBars().remove(uuid);
         if (bar != null) {
             try {
                 bar.getClass().getMethod("removeAll").invoke(bar);
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
-        
+
         plugin.getPlayersHidden().remove(uuid); // Tira da lista de esconder jogadores
-        
+
         if (plugin.getConfig().getBoolean("modulos.ativar-mensagens-entrada")) {
             String msg = plugin.getFileManager().getMessages().getString("mensagens-entrada.saiu");
-            if (msg == null || msg.isEmpty()) event.setQuitMessage(null);
-            else event.setQuitMessage(ChatUtils.color(event.getPlayer(), msg, plugin.getConfig().getBoolean("modulos.usar-placeholderapi")));
+            if (msg == null || msg.isEmpty())
+                event.setQuitMessage(null);
+            else {
+
+                msg = msg.replace("%player_name%", event.getPlayer().getName());
+
+                event.setQuitMessage(
+                        ChatUtils.color(
+                                event.getPlayer(),
+                                msg,
+                                plugin.getConfig().getBoolean("modulos.usar-placeholderapi")));
+            }
         }
     }
 
@@ -151,7 +203,8 @@ public class PlayerEvents implements Listener {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player p = event.getPlayer();
-        if (p.getLocation().getY() <= plugin.getConfig().getDouble("spawn.altura-void")) teleportToSpawn(p);
+        if (p.getLocation().getY() <= plugin.getConfig().getDouble("spawn.altura-void"))
+            teleportToSpawn(p);
     }
 
     // Bloqueia a chuva se configurado
@@ -167,16 +220,45 @@ public class PlayerEvents implements Listener {
     // Impede jogadores de quebrar blocos, colocar, perder fome e tomar dano.
     // Pessoas com OP (Admin) conseguem burlar isso pra construir o mapa.
     // ========================================================================
-    @EventHandler public void onBreak(BlockBreakEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); }
-    @EventHandler public void onPlace(BlockPlaceEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); }
-    @EventHandler public void onDrop(PlayerDropItemEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp()) e.setCancelled(true); }
-    @EventHandler public void onFood(FoodLevelChangeEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes")) e.setCancelled(true); }
-    @EventHandler public void onDamage(EntityDamageEvent e) { if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && e.getEntity() instanceof Player) e.setCancelled(true); }
+    @EventHandler
+    public void onBreak(BlockBreakEvent e) {
+        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp())
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onPlace(BlockPlaceEvent e) {
+        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp())
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDrop(PlayerDropItemEvent e) {
+        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && !e.getPlayer().isOp())
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onFood(FoodLevelChangeEvent e) {
+        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes"))
+            e.setCancelled(true);
+    }
+
+    @EventHandler
+    public void onDamage(EntityDamageEvent e) {
+        if (plugin.getConfig().getBoolean("modulos.ativar-protecoes") && e.getEntity() instanceof Player)
+            e.setCancelled(true);
+    }
 
     // Método rápido para mandar alguém pro Spawn baseando-se na config.yml
     private void teleportToSpawn(Player p) {
-        if (!plugin.getConfig().contains("spawn.local.mundo")) return;
+        if (!plugin.getConfig().contains("spawn.local.mundo"))
+            return;
         World w = Bukkit.getWorld(plugin.getConfig().getString("spawn.local.mundo"));
-        if (w != null) p.teleport(new Location(w, plugin.getConfig().getDouble("spawn.local.x"), plugin.getConfig().getDouble("spawn.local.y"), plugin.getConfig().getDouble("spawn.local.z"), (float) plugin.getConfig().getDouble("spawn.local.yaw"), (float) plugin.getConfig().getDouble("spawn.local.pitch")));
+        if (w != null)
+            p.teleport(new Location(w, plugin.getConfig().getDouble("spawn.local.x"),
+                    plugin.getConfig().getDouble("spawn.local.y"), plugin.getConfig().getDouble("spawn.local.z"),
+                    (float) plugin.getConfig().getDouble("spawn.local.yaw"),
+                    (float) plugin.getConfig().getDouble("spawn.local.pitch")));
     }
 }
