@@ -1,6 +1,5 @@
 package com.aeriaplugins.utils;
 
-import com.viaversion.viaversion.api.Via;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -11,11 +10,13 @@ import java.util.regex.Pattern;
 // ========================================================================
 // CLASSE: ChatUtils
 // OBJETIVO: Pintar textos e interpretar Placeholders (variáveis como %player%).
+// Compatível simultaneamente com Lobby (ViaVersion) e SkyBlock (Nativo 1.26.2+)
 // ========================================================================
 public class ChatUtils {
 
     // Deteta se o servidor é novo o suficiente para suportar cores RGB/Hexadecimais
     private static boolean supportsHex = false;
+    private static Boolean viaVersionPresente = null;
 
     static {
         try {
@@ -26,18 +27,43 @@ public class ChatUtils {
         }
     }
 
+    /**
+     * Verifica de forma segura se o ViaVersion está instalado no servidor.
+     */
+    private static boolean isViaVersionPresente() {
+        if (viaVersionPresente == null) {
+            viaVersionPresente = Bukkit.getPluginManager().getPlugin("ViaVersion") != null;
+        }
+        return viaVersionPresente;
+    }
+
     // ------------------------------------------------------------------------
     // DETETA SE O PLAYER SUPORTA RGB (1.16+)
     // ------------------------------------------------------------------------
     private static boolean playerSupportsHex(Player player) {
-        try {
-            int protocol = Via.getAPI().getPlayerVersion(player.getUniqueId());
+        // Se o ViaVersion não estiver no servidor (como no SkyBlock 1.26.2),
+        // o servidor é estritamente moderno, então o jogador suporta HEX por padrão.
+        if (!isViaVersionPresente()) {
+            return true;
+        }
 
-            // 1.16+
+        // Se o ViaVersion estiver presente (como no Lobby), usamos reflexão para chamar a API
+        // sem precisar importar a classe diretamente no topo do arquivo.
+        try {
+            Object viaAPI = Class.forName("com.viaversion.viaversion.api.Via")
+                    .getMethod("getAPI")
+                    .invoke(null);
+            
+            int protocol = (int) viaAPI.getClass()
+                    .getMethod("getPlayerVersion", java.util.UUID.class)
+                    .invoke(viaAPI, player.getUniqueId());
+
+            // Protocolo 735 ou superior significa versão 1.16+
             return protocol >= 735;
 
-        } catch (Exception e) {
-            return false;
+        } catch (Throwable e) {
+            // Caso ocorra qualquer erro na reflexão, assume verdadeiro devido às versões modernas do núcleo
+            return true;
         }
     }
 
@@ -50,16 +76,14 @@ public class ChatUtils {
         if (message == null || message.isEmpty())
             return "";
 
-        // Aplica o PlaceholderAPI se ativado (substitui %server_online%, %player_name%,
-        // etc)
+        // Aplica o PlaceholderAPI se ativado (substitui %server_online%, %player_name%, etc)
         if (p != null && usePapi && Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             message = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(p, message);
         }
         // Corrige placeholders quebrados
         message = fixBrokenPlaceholders(message);
 
-        // 1. Traduz gradientes modernos no formato
-        // <gradient:#hex1:#hex2>Texto</gradient>
+        // 1. Traduz gradientes modernos no formato <gradient:#hex1:#hex2>Texto</gradient>
         Pattern gradientPattern = Pattern.compile("<gradient:#([A-Fa-f0-9]{6}):#([A-Fa-f0-9]{6})>(.*?)</gradient>");
         Matcher gradientMatcher = gradientPattern.matcher(message);
         StringBuffer buffer = new StringBuffer();
@@ -222,8 +246,7 @@ public class ChatUtils {
 
             StringBuilder sb = new StringBuilder();
 
-            // Um ciclo que passa por cada letra e mistura a percentagem da Cor A com a Cor
-            // B
+            // Um ciclo que passa por cada letra e mistura a percentagem da Cor A com a Cor B
             for (int i = 0; i < length; i++) {
 
                 float ratio = (float) i / (float) (length - 1 == 0 ? 1 : length - 1);
