@@ -1,0 +1,54 @@
+<properties>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <pasta.plugins>D:\RedeMinecraft\SkyBlock\plugins</pasta.plugins>
+    </properties>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <echo message="Copiando o AeriaIslands atualizado para o servidor de SkyBlock..."/>
+                                <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                      todir="${pasta.plugins}"/>
+                                
+                                <echo message="Derrubando o processo Java da porta 25568 para forcar o reinicio do SkyBlock..."/>
+                                <exec executable="cmd">
+                                    <arg value="/c"/>
+                                    <arg value="for /f &quot;tokens=5&quot; %a in ('netstat -aon 2^&gt;nul ^| findstr :25568 ^| findstr LISTENING') do taskkill /f /pid %a 2&gt;nul || exit 0"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
