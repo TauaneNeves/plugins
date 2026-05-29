@@ -20,7 +20,10 @@ public class Main extends JavaPlugin {
     public void onEnable() {
         instance = this;
 
-        this.islandStorage = new IslandStorage();
+        // Salva o config.yml padrão caso ele não exista na pasta do plugin
+        saveDefaultConfig();
+
+        this.islandStorage = new IslandStorage(this);
         this.gridManager = new GridManager();
 
         WorldCreator creator = new WorldCreator("aeria_skyblock");
@@ -31,7 +34,7 @@ public class Main extends JavaPlugin {
 
         this.getCommand("is").setExecutor(new IslandCommand());
 
-        getLogger().info("AeriaIslands: Sistema em mundo unico carregado com sucesso!");
+        getLogger().info("AeriaIslands: Sistema em mundo unico e menus nativos carregado!");
     }
 
     @Override

@@ -1,0 +1,40 @@
+# ====================================================
+# CONFIGURAÇÃO DO PAINEL DA ILHA TÁTICA (/is)
+# ====================================================
+
+nome-do-menu: "&8Painel de Controle: Ilha"
+
+itens:
+  fundo:
+    material: GRAY_STAINED_GLASS_PANE
+    nome: " "
+  
+  criar-ilha:
+    material: GRASS_BLOCK
+    slot: 11
+    nome: "&a&l🔨 Gerenciar Espaço Aéreo"
+    schematic: "pmcskyblock.schem" # <-- Alterado para .schem
+    lore:
+      - "&7Clique aqui para estabelecer ou"
+      - "&7construir sua base operacional."
+      - ""
+      - "&e▶ Clique para iniciar o SkyBlock."
+
+  informacoes:
+    material: BOOK
+    slot: 13
+    nome: "&e&l📊 Suas Ilhas & Ativações"
+    lore:
+      - "&7Lista de bases ativas no sistema:"
+      - "{lista_ilhas}"
+      - ""
+      - "&7Para apagar use: &c/is delete <ID>"
+      - "&7Exemplo: &c/is delete 1"
+
+  teleportar:
+    material: COMPASS
+    slot: 15
+    nome: "&b&l🚀 Teleportar para Base"
+    lore:
+      - "&7Clique aqui para ir direto"
+      - "&7para a sua base operacional."
