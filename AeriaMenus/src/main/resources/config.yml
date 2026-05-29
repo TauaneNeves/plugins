@@ -23,20 +23,29 @@ bossbar:
   progresso: 1.0
 
 scoreboard:
-  titulo: "<gradient:#00d4ff:#00ff55>&lAERIA MENUS</gradient>"
+  titulo: "<gradient:#C8B6FF:#8EC5FC>&lCrazzyCraftBR</gradient>"
+
   linhas:
-    - "&8&m                                   "
-    - "&fPerfil:"
-    - " &8• &7Jogador: &#00ff55%player_name%"
-    - " &8• &7Cargo: &f%vault_rank%"
-    - " &8• &7Moedas: &a$%vault_eco_balance_formatted%"
+    - "&7&m                            "
+
+    - "&#F4F7FBPerfil:"
+    - " &#AAB7C4✦ &#F4F7FBJogador: &#8EC5FC%player_name%"
+    - " &#AAB7C4✦ &#F4F7FBCargo: &#C8B6FF%vault_rank%"
+    - " &#AAB7C4✦ &#F4F7FBCoins: &#98F5E1$%vault_eco_balance_formatted%"
+
     - ""
-    - "&fServidor:"
-    - " &8• &7Online: &#ffaa00%server_online%&8/&7%server_max_players%"
-    - " &8• &7Ping: &a%player_ping%ms"
+
+    - "&#F4F7FBServidor:"
+    - " &#AAB7C4✦ &#F4F7FBOnline: &#98F5E11&7/&f%server_max_players%" 
+    - " &#AAB7C4✦ &#F4F7FBPing: &#98F5E1%server_ping%"
+
+
+
     - ""
-    - "&#00d4ffloja.aeriamenus.com"
-    - "&8&m                                   "
+
+    - "&#AAB7C4play.&#8EC5FCaeria.com"
+
+    - "&7&m                           "
 
 tablist:
   tempo-atualizacao: 20

@@ -26,6 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+// ========================================================================
+// CLASSE: MenuEvents
+// OBJETIVO: Gerenciar tudo que envolve os itens clicáveis e menus virtuais.
+// ========================================================================
 public class MenuEvents implements Listener {
     private final Main plugin;
 
@@ -33,6 +37,10 @@ public class MenuEvents implements Listener {
         this.plugin = plugin;
     }
 
+    // ------------------------------------------------------------------------
+    // EVENTO: Ao digitar um comando (ex: /menu)
+    // Interceptamos o comando para ver se ele pertence a algum menu criado nas configs.
+    // ------------------------------------------------------------------------
     @EventHandler
     public void onCommandPreprocess(PlayerCommandPreprocessEvent e) {
         String fullCommand = e.getMessage().substring(1).toLowerCase();
@@ -51,14 +59,18 @@ public class MenuEvents implements Listener {
                     }
                 }
                 if (aliases.contains(baseCommand)) {
-                    e.setCancelled(true);
-                    open(e.getPlayer(), entry.getKey());
+                    e.setCancelled(true); // Cancela o comando original
+                    open(e.getPlayer(), entry.getKey()); // Abre o menu correspondente
                     return;
                 }
             }
         }
     }
 
+    // ------------------------------------------------------------------------
+    // EVENTO: Interação de clique no ar ou em blocos (Usar itens da mão)
+    // Aqui é onde o clique no RELÓGIO ou na BÚSSOLA do lobby acontece.
+    // ------------------------------------------------------------------------
     @EventHandler
     public void onInteract(PlayerInteractEvent e) {
         ItemStack i = e.getItem();
@@ -67,6 +79,7 @@ public class MenuEvents implements Listener {
         ItemMeta meta = i.getItemMeta();
         
         String key = null;
+        // Verifica se o item possui a marcação "escondida" no final da Lore para identificar a ação
         if (meta.hasLore() && !meta.getLore().isEmpty()) {
             String lastLine = meta.getLore().get(meta.getLore().size() - 1);
             if (lastLine.startsWith("§0id:")) {
@@ -75,16 +88,20 @@ public class MenuEvents implements Listener {
         }
 
         if (key != null) {
-            e.setCancelled(true);
+            e.setCancelled(true); // Impede de colocar o item no chão (se for bloco)
             if (e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR || e.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
                 String path = "itens-entrada." + key + ".acoes";
                 if (plugin.getConfig().contains(path)) {
+                    // Executa as ações definidas na config.yml (ex: abrir menu, esconder jogadores)
                     execute(p, plugin.getConfig().getStringList(path));
                 }
             }
         }
     }
 
+    // ------------------------------------------------------------------------
+    // EVENTO: Clique dentro de um Inventário (Menus abertos)
+    // ------------------------------------------------------------------------
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getCurrentItem() == null || !event.getCurrentItem().hasItemMeta()) return;
@@ -92,6 +109,7 @@ public class MenuEvents implements Listener {
         ItemMeta meta = event.getCurrentItem().getItemMeta();
         String data = null;
 
+        // Procura a marcação invisível do menu no item
         if (meta.hasLore() && !meta.getLore().isEmpty()) {
             String lastLine = meta.getLore().get(meta.getLore().size() - 1);
             if (lastLine.startsWith("§0menu:")) {
@@ -100,7 +118,7 @@ public class MenuEvents implements Listener {
         }
 
         if (data != null) {
-            event.setCancelled(true);
+            event.setCancelled(true); // Impede o jogador de roubar o item do menu
             Player player = (Player) event.getWhoClicked();
             String[] parts = data.split(";");
             if (parts.length == 2) {
@@ -111,6 +129,7 @@ public class MenuEvents implements Listener {
                 if (menuConfig != null) {
                     String baseItemPath = "itens." + itemKey;
                     
+                    // Checagem de permissão
                     if (menuConfig.contains(baseItemPath + ".permissao")) {
                         String permRequirida = menuConfig.getString(baseItemPath + ".permissao");
                         if (!player.hasPermission(permRequirida)) {
@@ -125,6 +144,7 @@ public class MenuEvents implements Listener {
                         }
                     }
 
+                    // Checagem de Dinheiro (Vault)
                     if (menuConfig.contains(baseItemPath + ".custo")) {
                         if (plugin.getConfig().getBoolean("modulos.usar-vault") && plugin.getEconomy() != null) {
                             double custo = menuConfig.getDouble(baseItemPath + ".custo");
@@ -133,7 +153,7 @@ public class MenuEvents implements Listener {
                                 player.sendMessage(ChatUtils.color(player, msgErro, plugin.getConfig().getBoolean("modulos.usar-placeholderapi")));
                                 return;
                             } else {
-                                plugin.getEconomy().withdrawPlayer(player, custo);
+                                plugin.getEconomy().withdrawPlayer(player, custo); // Desconta o dinheiro
                             }
                         } else {
                             player.sendMessage(ChatColor.RED + "O sistema de economia (Vault) está desativado!");
@@ -141,6 +161,7 @@ public class MenuEvents implements Listener {
                         }
                     }
 
+                    // Se passou em tudo, executa as ações do botão (ex: ir pro minigame)
                     String acoesPath = baseItemPath + ".acoes";
                     if (menuConfig.contains(acoesPath)) {
                         execute(player, menuConfig.getStringList(acoesPath));
@@ -150,6 +171,7 @@ public class MenuEvents implements Listener {
             return;
         }
 
+        // Impede movimentar itens do próprio inventário enquanto estiver num menu customizado
         boolean isCustomMenu = false;
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
         
@@ -165,6 +187,8 @@ public class MenuEvents implements Listener {
             event.setCancelled(true);
             return;
         }
+
+        // Impede que o jogador mova os itens do Lobby (Bússola/Relógio) caso a config mande
         if (plugin.getConfig().getBoolean("modulos.dar-itens-ao-entrar") && !event.getWhoClicked().isOp()) {
             if (event.getClickedInventory() == event.getWhoClicked().getInventory()) {
                 event.setCancelled(true);
@@ -172,11 +196,16 @@ public class MenuEvents implements Listener {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // MÉTODO: execute
+    // Este método lê a lista de 'acoes:' no arquivo YML e transforma em ações reais.
+    // ------------------------------------------------------------------------
     private void execute(Player p, List<String> a) {
         if (a == null) return;
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
         for (String s : a) {
             String linha = s.trim(); // Limpa os espaços invisíveis do YAML
+            
             if (linha.startsWith("comando: ")) {
                 p.performCommand(linha.substring(9).replace("%player%", p.getName()));
             } else if (linha.startsWith("consola: ")) {
@@ -186,7 +215,7 @@ public class MenuEvents implements Listener {
             } else if (linha.startsWith("menu: ")) {
                 open(p, linha.substring(6).trim());
             } else if (linha.equalsIgnoreCase("especial: alternar_visibilidade")) {
-                toggleVisibility(p);
+                toggleVisibility(p); // CHAMA A FUNÇÃO DE ESCONDER/MOSTRAR JOGADORES AQUI!
             } else if (linha.startsWith("servidor: ")) {
                 conectarServidor(p, linha.substring(10).trim());
             } else if (linha.startsWith("som: ")) {
@@ -197,6 +226,10 @@ public class MenuEvents implements Listener {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // MÉTODO: conectarServidor
+    // Envia o jogador para outro servidor da sua rede via BungeeCord.
+    // ------------------------------------------------------------------------
     private void conectarServidor(Player p, String serverName) {
         int portaAlvo = 25566; 
         if (serverName.equalsIgnoreCase("lobby")) {
@@ -208,8 +241,11 @@ public class MenuEvents implements Listener {
         }
 
         final int porta = portaAlvo;
+        
+        // Faz a checagem em segundo plano para não "congelar" o servidor inteiro
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             if (isServerOnline("localhost", porta)) {
+                // Servidor está online, então envia o jogador
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     try {
                         ByteArrayOutputStream b = new ByteArrayOutputStream();
@@ -220,6 +256,7 @@ public class MenuEvents implements Listener {
                     } catch (Exception ignored) {}
                 });
             } else {
+                // Servidor está Offline! Exibe mensagem bonita de falha.
                 Bukkit.getScheduler().runTask(plugin, () -> {
                     boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
                     String formatName = serverName.substring(0, 1).toUpperCase() + serverName.substring(1).toLowerCase();
@@ -246,6 +283,7 @@ public class MenuEvents implements Listener {
         });
     }
 
+    // Checa se o IP e a Porta estão abertos
     private boolean isServerOnline(String ip, int port) {
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(ip, port), 600); 
@@ -255,18 +293,29 @@ public class MenuEvents implements Listener {
         }
     }
 
+    // ------------------------------------------------------------------------
+    // MÉTODO: toggleVisibility (Relógio Mágico)
+    // Se o jogador estiver na lista oculta, mostra todos de novo.
+    // Se não estiver, adiciona à lista e esconde todo mundo da tela dele.
+    // ------------------------------------------------------------------------
     private void toggleVisibility(Player p) {
         if (plugin.getPlayersHidden().contains(p.getUniqueId())) {
+            // Remove da lista e torna todos visíveis
             plugin.getPlayersHidden().remove(p.getUniqueId());
             for (Player target : Bukkit.getOnlinePlayers()) p.showPlayer(target);
             p.sendMessage(ChatColor.GREEN + "Jogadores visíveis!");
         } else {
+            // Adiciona na lista e esconde todo mundo
             plugin.getPlayersHidden().add(p.getUniqueId());
             for (Player target : Bukkit.getOnlinePlayers()) p.hidePlayer(target);
             p.sendMessage(ChatColor.RED + "Jogadores ocultos!");
         }
     }
 
+    // ------------------------------------------------------------------------
+    // MÉTODO: open (Abrir um Menu Customizado)
+    // Lê as propriedades no YML e "pinta" o inventário na tela do jogador.
+    // ------------------------------------------------------------------------
     private void open(Player p, String k) {
         FileConfiguration menuConfig = plugin.getFileManager().getMenu(k);
         if (menuConfig == null) return;
@@ -281,9 +330,12 @@ public class MenuEvents implements Listener {
                 
                 if (i != null) {
                     ItemMeta m = i.getItemMeta();
-                    List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
-                    lore.add("§0menu:" + k + ";" + iK); 
-                    m.setLore(lore);
+                    boolean temAcao = menuConfig.contains(iP + ".acoes") && !menuConfig.getStringList(iP + ".acoes").isEmpty();
+                    if (temAcao || menuConfig.contains(iP + ".custo") || menuConfig.contains(iP + ".permissao")) {
+                        List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
+                        lore.add("§0menu:" + k + ";" + iK); 
+                        m.setLore(lore);
+                    }
                     i.setItemMeta(m);
                     inv.setItem(menuConfig.getInt(iP + ".slot"), i);
                 }

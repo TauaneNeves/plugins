@@ -13,6 +13,10 @@ import org.bukkit.inventory.Inventory;
 import java.util.ArrayList;
 import java.util.List;
 
+// ========================================================================
+// CLASSE: AeriaCommand
+// OBJETIVO: Gerir o comando principal do plugin (/am) e os seus subcomandos.
+// ========================================================================
 public class AeriaCommand implements CommandExecutor {
     private final Main plugin;
 
@@ -20,33 +24,47 @@ public class AeriaCommand implements CommandExecutor {
         this.plugin = plugin;
     }
 
+    // ------------------------------------------------------------------------
+    // MÉTODO: onCommand
+    // É executado sempre que alguém digita o comando associado a esta classe.
+    // ------------------------------------------------------------------------
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         boolean usePapi = plugin.getConfig().getBoolean("modulos.usar-placeholderapi");
         Player player = (sender instanceof Player) ? (Player) sender : null;
 
+        // Se o jogador apenas digitar /am ou /am ajuda
         if (args.length == 0 || args[0].equalsIgnoreCase("help") || args[0].equalsIgnoreCase("ajuda")) {
             enviarAjudaDetalhada(sender, player, usePapi);
             return true;
         }
 
+        // --------------------------------------------------------------------
+        // SUBCOMANDO: /am reload
+        // Recarrega as configurações sem ter de reiniciar o servidor inteiro.
+        // --------------------------------------------------------------------
         if (args[0].equalsIgnoreCase("reload")) {
             if (!sender.hasPermission("aeriamenus.admin")) {
                 sender.sendMessage(ChatUtils.color(player, "&cVocê não possui permissão!", usePapi));
                 return true;
             }
-            plugin.getFileManager().loadAll();
-            sender.sendMessage(ChatUtils.color(player, "<gradient:#00d4ff:#00ff55>&l[AeriaMenus]&r &aConfigurações recarregadas com sucesso!", usePapi));
+            plugin.reloadPlugin(); 
+            sender.sendMessage(ChatUtils.color(player, "&aConfigurações recarregadas com sucesso!", usePapi));
             return true;
         }
 
+        // --------------------------------------------------------------------
+        // SUBCOMANDO: /am abrir <menu> [jogador]
+        // Permite abrir um menu criado nas configurações para si mesmo ou para outro jogador.
+        // --------------------------------------------------------------------
         if (args[0].equalsIgnoreCase("abrir") || args[0].equalsIgnoreCase("open")) {
             if (!sender.hasPermission("aeriamenus.admin")) {
                 sender.sendMessage(ChatUtils.color(player, "&cVocê não possui permissão!", usePapi));
                 return true;
             }
             if (args.length < 2) {
-                sender.sendMessage(ChatUtils.color(player, "&c&lERRO! &7Uso: &e/am abrir <nome_do_menu> [jogador]", usePapi));
+                sender.sendMessage(
+                        ChatUtils.color(player, "&c&lERRO! &7Uso: &e/am abrir <nome_do_menu> [jogador]", usePapi));
                 return true;
             }
             String menuKey = args[1];
@@ -55,7 +73,9 @@ public class AeriaCommand implements CommandExecutor {
                 sender.sendMessage(ChatUtils.color(player, "&c&lERRO! &7Menu não encontrado.", usePapi));
                 return true;
             }
+            
             Player alvo = player;
+            // Se indicou um nome de jogador à frente do comando, tenta encontrá-lo
             if (args.length >= 3) {
                 alvo = Bukkit.getPlayer(args[2]);
                 if (alvo == null) {
@@ -63,44 +83,59 @@ public class AeriaCommand implements CommandExecutor {
                     return true;
                 }
             }
+            
+            // Se o comando foi executado pela consola, é obrigatório indicar um jogador
             if (alvo == null) {
                 sender.sendMessage(ChatColor.RED + "Especifique um jogador alvo via Console!");
                 return true;
             }
 
+            // Cria o menu visualmente no ecrã do jogador alvo
             int linhas = menuConfig.getInt("linhas", 3);
             String titulo = ChatUtils.color(alvo, menuConfig.getString("titulo", "Menu"), usePapi);
             Inventory inv = Bukkit.createInventory(null, linhas * 9, titulo);
-            
+
+            // Popula o inventário com os itens do ficheiro .yml
             if (menuConfig.contains("itens")) {
                 for (String iK : menuConfig.getConfigurationSection("itens").getKeys(false)) {
                     String iP = "itens." + iK;
-                    org.bukkit.inventory.ItemStack i = com.aeriaplugins.utils.ItemUtils.parseItem(menuConfig, iP, alvo, usePapi);
+                    org.bukkit.inventory.ItemStack i = com.aeriaplugins.utils.ItemUtils.parseItem(menuConfig, iP, alvo,
+                            usePapi);
                     if (i != null) {
                         org.bukkit.inventory.meta.ItemMeta m = i.getItemMeta();
-                        List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
-                        lore.add("§0menu:" + menuKey + ";" + iK);
-                        m.setLore(lore);
+                        boolean temAcao = menuConfig.contains(iP + ".acoes") && !menuConfig.getStringList(iP + ".acoes").isEmpty();
+                        if (temAcao || menuConfig.contains(iP + ".custo") || menuConfig.contains(iP + ".permissao")) {
+                            List<String> lore = m.hasLore() ? m.getLore() : new ArrayList<>();
+                            lore.add("§0menu:" + menuKey + ";" + iK); 
+                            m.setLore(lore);
+                        }
                         i.setItemMeta(m);
                         inv.setItem(menuConfig.getInt(iP + ".slot"), i);
                     }
                 }
             }
-            alvo.openInventory(inv);
-            sender.sendMessage(ChatUtils.color(player, "<gradient:#00d4ff:#00ff55>&l[AeriaMenus]&r &7Menu aberto para &f" + alvo.getName(), usePapi));
+            alvo.openInventory(inv); // Abre o inventário para o jogadorsender.sendMessage(ChatUtils.color(player,
+
             return true;
         }
         return true;
     }
 
+    // Método auxiliar para exibir o menu de ajuda
     private void enviarAjudaDetalhada(CommandSender sender, Player player, boolean usePapi) {
-        sender.sendMessage(ChatUtils.color(player, "&8&m                                                                     ", usePapi));
-        sender.sendMessage(ChatUtils.color(player, "       <gradient:#00d4ff:#00ff55>&lCENTRAL DE AJUDA — AERIAMENUS v1.0.0</gradient>", usePapi));
-        sender.sendMessage(ChatUtils.color(player, " &7Gerencie seus Lobbies, Scoreboards e Menus de forma hibrida.", usePapi));
-        sender.sendMessage(ChatUtils.color(player, "&8&m                                                                     ", usePapi));
+        sender.sendMessage(ChatUtils.color(player,
+                "&8&m                                                                ", usePapi));
+        sender.sendMessage(ChatUtils.color(player,
+                "       <gradient:#00d4ff:#00ff55>&lCENTRAL DE AJUDA — AERIAMENUS v1.0.0</gradient>", usePapi));
+        sender.sendMessage(
+                ChatUtils.color(player, " &7Gerencie seus Lobbies, Scoreboards e Menus de forma hibrida.", usePapi));
+        sender.sendMessage(ChatUtils.color(player,
+                "&8&m                                                                ", usePapi));
         sender.sendMessage(ChatUtils.color(player, "  &f/am ajuda &8- &7Exibe os comandos disponíveis.", usePapi));
         sender.sendMessage(ChatUtils.color(player, "  &f/am reload &8- &7Recarrega todas as configurações.", usePapi));
-        sender.sendMessage(ChatUtils.color(player, "  &f/am abrir <menu> [jogador] &8- &7Abre um menu remoto.", usePapi));
-        sender.sendMessage(ChatUtils.color(player, "&8&m                                                                     ", usePapi));
+        sender.sendMessage(
+                ChatUtils.color(player, "  &f/am abrir <menu> [jogador] &8- &7Abre um menu remoto.", usePapi));
+        sender.sendMessage(ChatUtils.color(player,
+                "&8&m                                                                ", usePapi));
     }
 }

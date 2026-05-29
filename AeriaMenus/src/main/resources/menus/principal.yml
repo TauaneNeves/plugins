@@ -2,7 +2,7 @@
 #          MENU PRINCIPAL - SELETOR
 # ==========================================
 
-titulo: "<gradient:#00d4ff:#00ff55>&lSELETOR DE SERVIDORES</gradient>"
+titulo: '<gradient:#00d4ff:#00ff55>Menu Principal</gradient>'
 linhas: 3
 comando:
   - "menu"
@@ -17,6 +17,8 @@ itens:
     lore:
       - "&7Crie a sua ilha flutuante,"
       - "&7evolua e domine a economia."
+      - "Invada Bases Inimigas!"
+      - "&7Seja bem-vindo ao nosso Skyblock!"
       - ""
       - "&fJogadores: &a%bungee_skyblock%"
       - ""
@@ -28,7 +30,7 @@ itens:
   Minigames:
     material: "DIAMOND_SWORD"
     slot: 13
-    nome: "<gradient:#ffaa00:#ff3333>&lMINIGAMES ARENA</gradient>"
+    nome: "<gradient:#ffaa00:#ff3333>&lMINIGAMES</gradient>"
     lore:
       - "&7Divirta-se em nossos modos"
       - "&7de jogo totalmente customizados."
@@ -43,7 +45,7 @@ itens:
   Survival:
     material: "DIAMOND_PICKAXE"
     slot: 15
-    nome: "<gradient:#ff00ff:#ffaa00>&lSURVIVAL CUSTOM</gradient>"
+    nome: "<gradient:#ff00ff:#ffaa00>&lSURVIVAL</gradient>"
     lore:
       - "&7Explore um mundo aberto,"
       - "&7construa vilas e faça clãs."
@@ -94,17 +96,23 @@ itens:
     acoes: []
   v7:
     material: "BLACK_STAINED_GLASS_PANE"
-    slot: 19
+    slot: 18
     nome: "&f"
     lore: []
     acoes: []
   v8:
     material: "BLACK_STAINED_GLASS_PANE"
-    slot: 25
+    slot: 19
     nome: "&f"
     lore: []
     acoes: []
   v9:
+    material: "BLACK_STAINED_GLASS_PANE"
+    slot: 25
+    nome: "&f"
+    lore: []
+    acoes: []
+  v10:
     material: "BLACK_STAINED_GLASS_PANE"
     slot: 26
     nome: "&f"
