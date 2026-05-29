@@ -17,6 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,7 +37,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 public class IslandCommand implements CommandExecutor, Listener {
 
@@ -45,7 +45,7 @@ public class IslandCommand implements CommandExecutor, Listener {
 
     public IslandCommand() {
         Bukkit.getPluginManager().registerEvents(this, Main.getInstance());
-        String titulo = Main.getInstance().getConfig().getString("nome-do-menu", "&8Painel da Ilha");
+        String titulo = Main.getInstance().getConfig().getString("nome-do-menu", "&8Painel de Controle: Navegação");
         this.TITULO_MENU = ChatColor.translateAlternateColorCodes('&', titulo);
     }
 
@@ -72,8 +72,16 @@ public class IslandCommand implements CommandExecutor, Listener {
                     jogador.sendMessage(ChatColor.RED + "❌ Você não possui uma ilha. Use o menu para criar uma.");
                     return true;
                 }
-                jogador.teleport(localIlha.clone().add(0.5, 2.0, 0.5));
-                jogador.sendMessage(ChatColor.GREEN + "Teleportado para a sua base operacional.");
+                if (localIlha.getWorld() == null) {
+                    jogador.sendMessage(ChatColor.RED + "❌ O mundo da sua ilha está descarregado. Use /mv load skyblock_void");
+                    return true;
+                }
+                jogador.teleport(localIlha);
+                jogador.sendMessage(ChatColor.GREEN + "🚀 Teleportado para o spawn oficial da sua base.");
+                return true;
+
+            case "setspawn":
+                configurarSpawnCustomizado(jogador);
                 return true;
 
             case "info":
@@ -82,7 +90,7 @@ public class IslandCommand implements CommandExecutor, Listener {
 
             case "delete":
                 if (args.length < 2) {
-                    jogador.sendMessage(ChatColor.RED + "❌ Informe o ID numérico da ilha que deseja apagar. Ex: /is delete 1");
+                    jogador.sendMessage(ChatColor.RED + "❌ Informe o ID da ilha. Ex: /is delete 1");
                     return true;
                 }
 
@@ -92,17 +100,16 @@ public class IslandCommand implements CommandExecutor, Listener {
                 Location localDeletar = Main.getInstance().getIslandStorage().getLocalizacaoIlhaPorNome(jogador.getUniqueId(), nomeAlvoDelecao);
                 
                 if (localDeletar == null) {
-                    jogador.sendMessage(ChatColor.RED + "❌ Você não possui nenhuma ilha ativa registrada com o ID: " + idAlvo);
+                    jogador.sendMessage(ChatColor.RED + "❌ Registro de ID " + idAlvo + " não localizado.");
                     return true;
                 }
 
-                jogador.sendMessage(ChatColor.RED + "⚠️ Removendo estruturas e registros da " + nomeAlvoDelecao + "...");
-                
+                jogador.sendMessage(ChatColor.RED + "⚠️ Removendo estruturas da " + nomeAlvoDelecao + "...");
                 removerEstruturaFisica(localDeletar);
                 Main.getInstance().getIslandStorage().removerIlhaPorNome(jogador.getUniqueId(), nomeAlvoDelecao);
                 
                 jogador.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
-                jogador.sendMessage(ChatColor.GOLD + "💥 A " + nomeAlvoDelecao + " foi completamente limpa e apagada do banco.");
+                jogador.sendMessage(ChatColor.GOLD + "💥 Ilha deletada com sucesso.");
                 return true;
         }
         return true;
@@ -124,12 +131,18 @@ public class IslandCommand implements CommandExecutor, Listener {
                 config.getStringList("itens.criar-ilha.lore")
         ));
 
+        inv.setItem(config.getInt("itens.setar-spawn.slot"), criarItemMenu(
+                Material.valueOf(config.getString("itens.setar-spawn.material")),
+                config.getString("itens.setar-spawn.nome"),
+                config.getStringList("itens.setar-spawn.lore")
+        ));
+
         List<String> loreConfigInfo = config.getStringList("itens.informacoes.lore");
         List<String> loreFinalInfo = new ArrayList<>();
         List<String> minhasIlhas = Main.getInstance().getIslandStorage().getNomesIlhas(jogador.getUniqueId());
 
-        for (String linha : loreConfigInfo) {
-            if (linha.contains("{lista_ilhas}")) {
+        for (String ServerLinha : loreConfigInfo) {
+            if (ServerLinha.contains("{lista_ilhas}")) {
                 if (minhasIlhas.isEmpty()) {
                     loreFinalInfo.add(ChatColor.RED + "   Nenhuma base operacional encontrada.");
                 } else {
@@ -137,17 +150,18 @@ public class IslandCommand implements CommandExecutor, Listener {
                         loreFinalInfo.add(ChatColor.GRAY + "   ▪ " + ChatColor.YELLOW + nomeIlha);
                     }
                 }
+            } else if (ServerLinha.contains("{nivel_ilha}")) {
+                loreFinalInfo.add(ServerLinha.replace("{nivel_ilha}", String.valueOf(Main.getInstance().getIslandStorage().getNivelIlha(jogador.getUniqueId(), minhasIlhas.isEmpty() ? "" : minhasIlhas.get(0)))));
             } else {
-                loreFinalInfo.add(linha);
+                loreFinalInfo.add(ServerLinha);
             }
         }
 
-        ItemStack itemInfo = criarItemMenu(
+        inv.setItem(config.getInt("itens.informacoes.slot"), criarItemMenu(
                 Material.valueOf(config.getString("itens.informacoes.material")),
                 config.getString("itens.informacoes.nome"),
                 loreFinalInfo
-        );
-        inv.setItem(config.getInt("itens.informacoes.slot"), itemInfo);
+        ));
 
         inv.setItem(config.getInt("itens.teleportar.slot"), criarItemMenu(
                 Material.valueOf(config.getString("itens.teleportar.material")),
@@ -172,6 +186,9 @@ public class IslandCommand implements CommandExecutor, Listener {
         if (slot == config.getInt("itens.criar-ilha.slot")) {
             jogador.closeInventory();
             processarCriacaoIlha(jogador, config.getString("itens.criar-ilha.schematic"));
+        } else if (slot == config.getInt("itens.setar-spawn.slot")) {
+            jogador.closeInventory();
+            jogador.performCommand("is setspawn");
         } else if (slot == config.getInt("itens.informacoes.slot")) {
             jogador.performCommand("is info");
         } else if (slot == config.getInt("itens.teleportar.slot")) {
@@ -183,17 +200,24 @@ public class IslandCommand implements CommandExecutor, Listener {
     @EventHandler
     public void aoCairNoVoid(PlayerMoveEvent event) {
         Player jogador = event.getPlayer();
-        
-        // Verifica se o jogador caiu abaixo da camada Y: 0
         if (jogador.getLocation().getY() < 0) {
-            // Se for OP ou tiver em modo criativo, não mata para não atrapalhar testes (opcional)
             if (jogador.isOp() && jogador.getGameMode().toString().equals("CREATIVE")) {
                 return;
             }
-            
-            // Força a morte do jogador para que ele drope os itens e limpe o inventário
             jogador.setHealth(0.0);
         }
+    }
+
+    private void configurarSpawnCustomizado(Player jogador) {
+        List<String> ilhas = Main.getInstance().getIslandStorage().getNomesIlhas(jogador.getUniqueId());
+        if (ilhas.isEmpty()) {
+            jogador.sendMessage(ChatColor.RED + "❌ Você não possui nenhuma ilha para fixar o ponto de spawn!");
+            return;
+        }
+        
+        String nomeIlha = ilhas.get(0);
+        Main.getInstance().getIslandStorage().atualizarSpawnIlha(jogador.getUniqueId(), nomeIlha, jogador.getLocation());
+        jogador.sendMessage(ChatColor.GREEN + "🎯 Ponto de spawn atualizado com sucesso!");
     }
 
     private void processarCriacaoIlha(Player jogador, String nomeSchematic) {
@@ -219,10 +243,11 @@ public class IslandCommand implements CommandExecutor, Listener {
         String nomeFinalIlha = "Ilha #" + proximoIdGlobal;
         String dataCriacao = dateFormat.format(new Date());
 
-        Main.getInstance().getIslandStorage().criarNovaIlha(jogador.getUniqueId(), nomeFinalIlha, localNovo, dataCriacao);
+        // Força o spawn inicial com deslocamento preciso na camada 103 (3 blocos acima do centro Y:100 da colagem)
+        Location locSpawnInicial = new Location(localNovo.getWorld(), localNovo.getX() + 0.5, 103.5, localNovo.getZ() + 0.5);
+        Main.getInstance().getIslandStorage().criarNovaIlha(jogador.getUniqueId(), nomeFinalIlha, locSpawnInicial, dataCriacao);
         
-        Location locSpawn = localNovo.clone().add(0.5, 3.5, 0.5);
-        jogador.teleport(locSpawn);
+        jogador.teleport(locSpawnInicial);
         jogador.sendMessage(ChatColor.AQUA + "✨ " + nomeFinalIlha + " estabelecida com sucesso!");
     }
 
@@ -239,7 +264,6 @@ public class IslandCommand implements CommandExecutor, Listener {
                 Clipboard clipboard = reader.read();
                 try (EditSession editSession = WorldEdit.getInstance().newEditSessionBuilder().world(worldEditWorld).build()) {
                     ClipboardHolder holder = new ClipboardHolder(clipboard);
-                    
                     Operation operation = holder.createPaste(editSession)
                             .to(BlockVector3.at(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ()))
                             .ignoreAirBlocks(false)
@@ -253,31 +277,19 @@ public class IslandCommand implements CommandExecutor, Listener {
     }
 
     private void exibirInfoIlha(Player jogador) {
-        UUID donoDaRegiao = Main.getInstance().getGridManager().getDonoDaIlhaNaLocalizacao(jogador.getLocation());
-        String nomeIlhaRegiao = Main.getInstance().getGridManager().getNomeDaIlhaNaLocalizacao(jogador.getLocation());
-
-        if (donoDaRegiao != null) {
-            if (donoDaRegiao.equals(jogador.getUniqueId())) {
-                String data = Main.getInstance().getIslandStorage().getDataCriacao(jogador.getUniqueId(), nomeIlhaRegiao);
-                jogador.sendMessage(ChatColor.AQUA + "=== Detalhes da Base Operacional ===");
-                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Nome de Identificação: " + ChatColor.YELLOW + nomeIlhaRegiao);
-                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Proprietário Core: " + ChatColor.GREEN + jogador.getName());
-                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Data de Ativação: " + ChatColor.WHITE + data);
-            } else {
-                jogador.sendMessage(ChatColor.GOLD + "=== Informações de Região Aeria ===");
-                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Identificador da Ilha: " + ChatColor.YELLOW + nomeIlhaRegiao);
-                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Status de Segurança: " + ChatColor.RED + "PROTEGIDA");
-            }
+        List<String> minhasIlhas = Main.getInstance().getIslandStorage().getNomesIlhas(jogador.getUniqueId());
+        if (minhasIlhas.isEmpty()) {
+            jogador.sendMessage(ChatColor.RED + "❌ Você não possui ilhas registradas.");
         } else {
-            List<String> minhasIlhas = Main.getInstance().getIslandStorage().getNomesIlhas(jogador.getUniqueId());
-            if (minhasIlhas.isEmpty()) {
-                jogador.sendMessage(ChatColor.RED + "❌ Você não possui ilhas registradas.");
-            } else {
-                jogador.sendMessage(ChatColor.AQUA + "=== Suas Ilhas Registradas ===");
-                for (String nome : minhasIlhas) {
-                    jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ " + ChatColor.YELLOW + nome);
-                }
-            }
+            String nome = minhasIlhas.get(0);
+            String data = Main.getInstance().getIslandStorage().getDataCriacao(jogador.getUniqueId(), nome);
+            int nivel = Main.getInstance().getIslandStorage().getNivelIlha(jogador.getUniqueId(), nome);
+            
+            jogador.sendMessage(ChatColor.AQUA + "=== Detalhes da Base Operacional ===");
+            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Nome de Identificação: " + ChatColor.YELLOW + nome);
+            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Proprietário Core: " + ChatColor.GREEN + jogador.getName());
+            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Data de Ativação: " + ChatColor.WHITE + data);
+            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Nível Territorial: " + ChatColor.AQUA + nivel + " XP");
         }
     }
 
@@ -288,8 +300,8 @@ public class IslandCommand implements CommandExecutor, Listener {
             meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', nome));
             if (lore != null) {
                 List<String> loreColorida = new ArrayList<>();
-                for (String línea : lore) {
-                    loreColorida.add(ChatColor.translateAlternateColorCodes('&', línea));
+                for (String linea : lore) {
+                    loreColorida.add(ChatColor.translateAlternateColorCodes('&', linea));
                 }
                 meta.setLore(loreColorida);
             }
@@ -299,10 +311,17 @@ public class IslandCommand implements CommandExecutor, Listener {
     }
 
     private void removerEstruturaFisica(Location centro) {
+        World mundo = centro.getWorld();
+        if (mundo == null) return;
+
+        int cX = centro.getBlockX();
+        int cY = centro.getBlockY();
+        int cZ = centro.getBlockZ();
+
         for (int x = -30; x <= 30; x++) {
-            for (int y = -30; y <= 30; y++) {
+            for (int y = -20; y <= 30; y++) {
                 for (int z = -30; z <= 30; z++) {
-                    centro.clone().add(x, y, z).getBlock().setType(Material.AIR);
+                    mundo.getBlockAt(cX + x, cY + y, cZ + z).setType(Material.AIR, false);
                 }
             }
         }

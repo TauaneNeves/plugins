@@ -1,58 +1,46 @@
 package com.aeriaplugins.managers;
 
 import com.aeriaplugins.plugins.Main;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.World;
 
 import java.util.UUID;
 
 public class GridManager {
 
-    // Distância radial limite considerada como área interna/protegida de uma ilha específica
-    private final int RAIO_PROTECAO = 250; 
+    // ALTERADO: Agora as ilhas serão sequenciadas dentro do mapa baixado
+    private final String NOME_MUNDO_VOID = "skyblockv";
+    private final int ESPACAMENTO_ILHAS = 1000; // Distância segura entre as bases no mapa
+    private final int ALTURA_FIXA = 100;        // Mantém a colagem estável na camada 100
 
     public Location calcularProximaCoordenada() {
-        int proximoId = Main.getInstance().getIslandStorage().getRawConfig().getInt("contador-global-id", 0) + 1;
-        // Alinhamento linear na grade tática com distanciamento seguro de 1500 blocos
-        double x = proximoId * 1500.0;
-        double y = 100.0;
-        double z = 0.0;
-        return new Location(org.bukkit.Bukkit.getWorld("aeria_skyblock"), x, y, z);
-    }
-
-    public UUID getDonoDaIlhaNaLocalizacao(Location loc) {
-        FileConfiguration config = Main.getInstance().getIslandStorage().getRawConfig();
-        if (!config.contains("jogadores")) return null;
-
-        for (String uuidStr : config.getConfigurationSection("jogadores").getKeys(false)) {
-            for (String nomeIlha : config.getConfigurationSection("jogadores." + uuidStr).getKeys(false)) {
-                String path = "jogadores." + uuidStr + "." + nomeIlha;
-                double x = config.getDouble(path + ".x");
-                double z = config.getDouble(path + ".z");
-
-                if (Math.abs(loc.getX() - x) <= RAIO_PROTECAO && Math.abs(loc.getZ() - z) <= RAIO_PROTECAO) {
-                    return UUID.fromString(uuidStr);
-                }
-            }
+        World mundo = Bukkit.getWorld(NOME_MUNDO_VOID);
+        
+        // Se o Multiverse descarregar o mapa, força o carregamento automático
+        if (mundo == null) {
+            mundo = Bukkit.createWorld(new org.bukkit.WorldCreator(NOME_MUNDO_VOID));
         }
+        
+        if (mundo == null && !Bukkit.getWorlds().isEmpty()) {
+            mundo = Bukkit.getWorlds().get(0);
+        }
+
+        // Obtém a quantidade de ilhas para não sobrepor uma base na outra
+        int totalIlhasAtivas = Main.getInstance().getIslandStorage().getNomesIlhas(UUID.randomUUID()).size();
+        if (totalIlhasAtivas < 0) totalIlhasAtivas = 0;
+        
+        // Alinhamento linear no eixo Z para distribuir os jogadores pelo mapa
+        int proximoZ = totalIlhasAtivas * ESPACAMENTO_ILHAS;
+        
+        return new Location(mundo, 0, ALTURA_FIXA, proximoZ);
+    }
+    
+    public UUID getDonoDaIlhaNaLocalizacao(Location loc) {
         return null;
     }
 
     public String getNomeDaIlhaNaLocalizacao(Location loc) {
-        FileConfiguration config = Main.getInstance().getIslandStorage().getRawConfig();
-        if (!config.contains("jogadores")) return null;
-
-        for (String uuidStr : config.getConfigurationSection("jogadores").getKeys(false)) {
-            for (String nomeIlha : config.getConfigurationSection("jogadores." + uuidStr).getKeys(false)) {
-                String path = "jogadores." + uuidStr + "." + nomeIlha;
-                double x = config.getDouble(path + ".x");
-                double z = config.getDouble(path + ".z");
-
-                if (Math.abs(loc.getX() - x) <= RAIO_PROTECAO && Math.abs(loc.getZ() - z) <= RAIO_PROTECAO) {
-                    return nomeIlha;
-                }
-            }
-        }
-        return null;
+        return "";
     }
 }

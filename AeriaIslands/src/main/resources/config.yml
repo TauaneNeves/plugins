@@ -1,8 +1,4 @@
-# ====================================================
-# CONFIGURAÇÃO DO PAINEL DA ILHA TÁTICA (/is)
-# ====================================================
-
-nome-do-menu: "&8Painel de Controle: Ilha"
+nome-do-menu: "&8Painel de Controle: Navegação"
 
 itens:
   fundo:
@@ -11,30 +7,43 @@ itens:
   
   criar-ilha:
     material: GRASS_BLOCK
-    slot: 11
-    nome: "&a&l🔨 Gerenciar Espaço Aéreo"
-    schematic: "pmcskyblock.schem" # <-- Alterado para .schem
+    slot: 10
+    nome: "&a&l🔨 Criar Nova Ilha"
+    schematic: "pmcskyblock.schem"
     lore:
       - "&7Clique aqui para estabelecer ou"
       - "&7construir sua base operacional."
       - ""
       - "&e▶ Clique para iniciar o SkyBlock."
 
+  setar-spawn:
+    material: ANVIL
+    slot: 12
+    nome: "&6&l🎯 Fixar Spawn da Base"
+    lore:
+      - "&7Define a sua localização atual como"
+      - "&7o ponto de retorno oficial da ilha."
+      - ""
+      - "&e▶ Clique para salvar o Spawn."
+
   informacoes:
     material: BOOK
-    slot: 13
-    nome: "&e&l📊 Suas Ilhas & Ativações"
+    slot: 14
+    nome: "&e&l📊 Estatísticas Centrais"
     lore:
-      - "&7Lista de bases ativas no sistema:"
+      - "&7Status técnico do seu território:"
       - "{lista_ilhas}"
       - ""
+      - "&7Nível Atual: &b{nivel_ilha} XP"
+      - ""
       - "&7Para apagar use: &c/is delete <ID>"
-      - "&7Exemplo: &c/is delete 1"
 
   teleportar:
     material: COMPASS
-    slot: 15
-    nome: "&b&l🚀 Teleportar para Base"
+    slot: 16
+    nome: "&b&l🚀 Vetor de Teleporte"
     lore:
-      - "&7Clique aqui para ir direto"
-      - "&7para a sua base operacional."
+      - "&7Direcione os motores e teleporte-se"
+      - "&7direto para a sua base operacional."
+      - ""
+      - "&e▶ Clique para viajar."

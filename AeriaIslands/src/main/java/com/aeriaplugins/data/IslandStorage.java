@@ -45,7 +45,22 @@ public class IslandStorage {
         config.set(path + ".x", loc.getX());
         config.set(path + ".y", loc.getY());
         config.set(path + ".z", loc.getZ());
+        config.set(path + ".yaw", loc.getYaw());
+        config.set(path + ".pitch", loc.getPitch());
         config.set(path + ".data", dataCriacao);
+        config.set(path + ".nivel", 1);
+        config.set(path + ".membros", new ArrayList<String>());
+        salvar();
+    }
+
+    public void atualizarSpawnIlha(UUID uuid, String nomeIlha, Location loc) {
+        String path = "jogadores." + uuid.toString() + "." + nomeIlha;
+        config.set(path + ".world", loc.getWorld().getName());
+        config.set(path + ".x", loc.getX());
+        config.set(path + ".y", loc.getY());
+        config.set(path + ".z", loc.getZ());
+        config.set(path + ".yaw", loc.getYaw());
+        config.set(path + ".pitch", loc.getPitch());
         salvar();
     }
 
@@ -71,8 +86,36 @@ public class IslandStorage {
                 Bukkit.getWorld(config.getString(path + ".world")),
                 config.getDouble(path + ".x"),
                 config.getDouble(path + ".y"),
-                config.getDouble(path + ".z")
+                config.getDouble(path + ".z"),
+                (float) config.getDouble(path + ".yaw", 0.0),
+                (float) config.getDouble(path + ".pitch", 0.0)
         );
+    }
+
+    public int getNivelIlha(UUID uuid, String nomeIlha) {
+        String path = "jogadores." + uuid.toString() + "." + nomeIlha + ".nivel";
+        return config.getInt(path, 1);
+    }
+
+    public void setNivelIlha(UUID uuid, String nomeIlha, int nivel) {
+        String path = "jogadores." + uuid.toString() + "." + nomeIlha + ".nivel";
+        config.set(path, nivel);
+        salvar();
+    }
+
+    public List<String> getMembrosIlha(UUID uuid, String nomeIlha) {
+        String path = "jogadores." + uuid.toString() + "." + nomeIlha + ".membros";
+        return config.getStringList(path);
+    }
+
+    public void adicionarMembroIlha(UUID uuid, String nomeIlha, UUID membroUuid) {
+        String path = "jogadores." + uuid.toString() + "." + nomeIlha + ".membros";
+        List<String> membros = config.getStringList(path);
+        if (!membros.contains(membroUuid.toString())) {
+            membros.add(membroUuid.toString());
+            config.set(path, membros);
+            salvar();
+        }
     }
 
     public String getDataCriacao(UUID uuid, String nomeIlha) {
