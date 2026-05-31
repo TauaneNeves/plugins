@@ -1,5 +1,6 @@
 package com.aeriaplugins.raids;
 
+import com.aeriaplugins.raids.commands.RaidCommand;
 import com.aeriaplugins.raids.data.RaidStorage;
 import com.aeriaplugins.raids.listeners.LockListener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -15,6 +16,8 @@ public class AeriaRaids extends JavaPlugin {
         this.raidStorage = new RaidStorage(this);
         
         getServer().getPluginManager().registerEvents(new LockListener(), this);
+        getCommand("aeriaraids").setExecutor(new RaidCommand());
+        
         getLogger().info("AeriaRaids: Sistema de arrombamento carregado com sucesso!");
     }
 
