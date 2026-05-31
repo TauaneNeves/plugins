@@ -111,6 +111,39 @@ public class IslandCommand implements CommandExecutor, Listener {
                 jogador.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
                 jogador.sendMessage(ChatColor.GOLD + "💥 Ilha deletada com sucesso.");
                 return true;
+
+            case "deleteall":
+                if (!jogador.isOp()) {
+                    jogador.sendMessage(ChatColor.RED + "❌ Comando restrito para administradores.");
+                    return true;
+                }
+                
+                jogador.sendMessage(ChatColor.RED + "⚠️ Iniciando deleção física e de dados de todas as ilhas...");
+                
+                org.bukkit.configuration.file.FileConfiguration storageConfig = Main.getInstance().getIslandStorage().getRawConfig();
+                if (storageConfig.contains("jogadores") && storageConfig.getConfigurationSection("jogadores") != null) {
+                    for (String uuidStr : storageConfig.getConfigurationSection("jogadores").getKeys(false)) {
+                        java.util.UUID donoUuid = java.util.UUID.fromString(uuidStr);
+                        for (String ilhaNome : Main.getInstance().getIslandStorage().getNomesIlhas(donoUuid)) {
+                            Location locRemover = Main.getInstance().getIslandStorage().getLocalizacaoIlhaPorNome(donoUuid, ilhaNome);
+                            if (locRemover != null) {
+                                removerEstruturaFisica(locRemover);
+                            }
+                        }
+                    }
+                    
+                    storageConfig.set("jogadores", null);
+                    storageConfig.set("contador-global-id", 0);
+                    
+                    try {
+                        storageConfig.save(new java.io.File(Main.getInstance().getDataFolder(), "islands.yml"));
+                    } catch (java.io.IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                
+                jogador.sendMessage(ChatColor.GOLD + "💥 Todas as ilhas foram removidas e o banco de dados foi resetado.");
+                return true;
         }
         return true;
     }
@@ -243,7 +276,6 @@ public class IslandCommand implements CommandExecutor, Listener {
         String nomeFinalIlha = "Ilha #" + proximoIdGlobal;
         String dataCriacao = dateFormat.format(new Date());
 
-        // Força o spawn inicial com deslocamento preciso na camada 103 (3 blocos acima do centro Y:100 da colagem)
         Location locSpawnInicial = new Location(localNovo.getWorld(), localNovo.getX() + 0.5, 103.5, localNovo.getZ() + 0.5);
         Main.getInstance().getIslandStorage().criarNovaIlha(jogador.getUniqueId(), nomeFinalIlha, locSpawnInicial, dataCriacao);
         
