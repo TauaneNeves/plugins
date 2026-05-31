@@ -259,15 +259,8 @@ public class LockListener implements Listener {
     public void aoQuebrarBloco(BlockBreakEvent event) {
         Location loc = event.getBlock().getLocation();
         if (AeriaRaids.getInstance().getRaidStorage().isTrancado(loc)) {
-            UUID dono = AeriaRaids.getInstance().getRaidStorage().getDono(loc);
-            if (dono != null && dono.equals(event.getPlayer().getUniqueId())) {
-                AeriaRaids.getInstance().getRaidStorage().quebrarCadeado(loc);
-                removerItemFrameVisual(loc);
-                event.getBlock().getWorld().dropItemNaturally(loc, RaidCommand.getCadeadoItem());
-            } else {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage(ChatColor.RED + "❌ Rompa o cadeado primeiro para poder quebrar o compartimento.");
-            }
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.RED + "❌ Remova o cadeado antes de quebrar este compartimento.");
         }
     }
 
