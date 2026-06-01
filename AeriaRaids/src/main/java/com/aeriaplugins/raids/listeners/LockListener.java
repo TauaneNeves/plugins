@@ -1,4 +1,3 @@
-// src/main/java/com/aeriaplugins/raids/listeners/LockListener.java
 package com.aeriaplugins.raids.listeners;
 
 import com.aeriaplugins.raids.AeriaRaids;
@@ -88,6 +87,25 @@ public class LockListener implements Listener {
         Location loc = bloco.getLocation();
         boolean trancado = AeriaRaids.getInstance().getRaidStorage().isTrancado(loc);
         UUID dono = AeriaRaids.getInstance().getRaidStorage().getDono(loc);
+
+        if (trancado) {
+            boolean temCadeadoVisual = false;
+            for (Entity entity : loc.getWorld().getNearbyEntities(loc.clone().add(0.5, 0.5, 0.5), 1.5, 1.5, 1.5)) {
+                if (entity instanceof ItemFrame) {
+                    ItemStack frameItem = ((ItemFrame) entity).getItem();
+                    if (isCadeado(frameItem)) {
+                        temCadeadoVisual = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!temCadeadoVisual) {
+                AeriaRaids.getInstance().getRaidStorage().quebrarCadeado(loc);
+                trancado = false;
+                jogador.sendMessage(ChatColor.YELLOW + "⚠️ [Sistema] Um registo de cadeado fantasma antigo foi limpo.");
+            }
+        }
 
         ItemStack itemMao = event.getItem();
         boolean segurandoCadeado = isCadeado(itemMao);
@@ -459,6 +477,23 @@ public class LockListener implements Listener {
                 return;
             }
 
+            boolean temCadeadoVisual = false;
+            for (Entity entity : loc.getWorld().getNearbyEntities(loc.clone().add(0.5, 0.5, 0.5), 1.5, 1.5, 1.5)) {
+                if (entity instanceof ItemFrame) {
+                    ItemStack frameItem = ((ItemFrame) entity).getItem();
+                    if (isCadeado(frameItem)) {
+                        temCadeadoVisual = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!temCadeadoVisual) {
+                AeriaRaids.getInstance().getRaidStorage().quebrarCadeado(loc);
+                event.getPlayer().sendMessage(ChatColor.YELLOW + "⚠️ [Sistema] Um registo de cadeado fantasma foi limpo e o bloco libertado.");
+                return;
+            }
+
             boolean adminBypass = event.getPlayer().hasPermission("aeriaraids.admin") && AeriaRaids.getInstance().getConfig().getBoolean("admin-bypass", false);
             if (adminBypass) {
                 AeriaRaids.getInstance().getRaidStorage().quebrarCadeado(loc);
@@ -627,7 +662,7 @@ public class LockListener implements Listener {
             if (entity instanceof ItemFrame) {
                 ItemFrame frame = (ItemFrame) entity;
                 ItemStack item = frame.getItem();
-                if (isCadeado(item)) {
+                if          (isCadeado(item)) {
                     frame.remove();
                 }
             }
