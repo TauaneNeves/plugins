@@ -37,6 +37,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 public class IslandCommand implements CommandExecutor, Listener {
 
@@ -73,7 +74,7 @@ public class IslandCommand implements CommandExecutor, Listener {
                     return true;
                 }
                 if (localIlha.getWorld() == null) {
-                    jogador.sendMessage(ChatColor.RED + "❌ O mundo da sua ilha está descarregado. Use /mv load skyblock_void");
+                    jogador.sendMessage(ChatColor.RED + "❌ O mundo da sua ilha está descarregado. Use /mv load skyblockv");
                     return true;
                 }
                 jogador.teleport(localIlha);
@@ -309,19 +310,28 @@ public class IslandCommand implements CommandExecutor, Listener {
     }
 
     private void exibirInfoIlha(Player jogador) {
-        List<String> minhasIlhas = Main.getInstance().getIslandStorage().getNomesIlhas(jogador.getUniqueId());
-        if (minhasIlhas.isEmpty()) {
-            jogador.sendMessage(ChatColor.RED + "❌ Você não possui ilhas registradas.");
-        } else {
-            String nome = minhasIlhas.get(0);
-            String data = Main.getInstance().getIslandStorage().getDataCriacao(jogador.getUniqueId(), nome);
-            int nivel = Main.getInstance().getIslandStorage().getNivelIlha(jogador.getUniqueId(), nome);
+        Location locAtual = jogador.getLocation();
+        UUID donoUuid = Main.getInstance().getGridManager().getDonoDaIlhaNaLocalizacao(locAtual);
+        String nomeIlha = Main.getInstance().getGridManager().getNomeDaIlhaNaLocalizacao(locAtual);
+
+        if (donoUuid != null && !nomeIlha.isEmpty()) {
+            String data = Main.getInstance().getIslandStorage().getDataCriacao(donoUuid, nomeIlha);
+            int nivel = Main.getInstance().getIslandStorage().getNivelIlha(donoUuid, nomeIlha);
             
             jogador.sendMessage(ChatColor.AQUA + "=== Detalhes da Base Operacional ===");
-            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Nome de Identificação: " + ChatColor.YELLOW + nome);
-            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Proprietário Core: " + ChatColor.GREEN + jogador.getName());
+            jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Nome de Identificação: " + ChatColor.YELLOW + nomeIlha);
+
+            if (donoUuid.equals(jogador.getUniqueId()) || jogador.isOp() || Main.getInstance().getIslandStorage().getMembrosIlha(donoUuid, nomeIlha).contains(jogador.getUniqueId().toString())) {
+                String nomeDono = Bukkit.getOfflinePlayer(donoUuid).getName();
+                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Proprietário Core: " + ChatColor.GREEN + (nomeDono != null ? nomeDono : donoUuid.toString()));
+            } else {
+                jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Proprietário Core: " + ChatColor.RED + "Confidencial (Inimigo)");
+            }
+
             jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Data de Ativação: " + ChatColor.WHITE + data);
             jogador.sendMessage(ChatColor.DARK_GRAY + " ▪ Nível Territorial: " + ChatColor.AQUA + nivel + " XP");
+        } else {
+            jogador.sendMessage(ChatColor.RED + "❌ Você não está posicionado no espaço aéreo de nenhuma ilha registrada.");
         }
     }
 
