@@ -1,0 +1,43 @@
+# ==========================================
+#            AeriaGPS - Configuração
+# ==========================================
+
+configuracoes_gerais:
+  # Se true, o craft nativo do Bukkit não é registrado no servidor.
+  # O plugin AeriaRecipes será responsável por gerenciar o desbloqueio.
+  usar_sistema_blueprints: false
+  
+  # Tempo em ticks (20 ticks = 1 segundo) para atualizar a BossBar e consumir bateria
+  intervalo_atualizacao_ticks: 20
+  
+  # Distância em blocos para um inibidor inimigo começar a embaralhar a BossBar
+  raio_interferencia_inibidor: 100
+
+item_gps:
+  material: DARK_OAK_HANGING_SIGN
+  nome: "&6&lAeriaGPS &7- &eTático"
+  lore:
+    - "&7Equipamento de navegação por satélite."
+    - "&7Bateria: &a{bateria}%"
+    - ""
+    - "&eClique direito para abrir o painel."
+  custom_model_data: 0
+  bateria_maxima: 100
+  consumo_por_ciclo: 1 # Consome 1% a cada ciclo definido em intervalo_atualizacao_ticks
+
+# Configuração de Crafting (Ativa apenas se usar_sistema_blueprints for false)
+receita:
+  linha_1: " I "
+  linha_2: "RSR"
+  linha_3: " G "
+  ingredientes:
+    'I': IRON_INGOT
+    'R': REDSTONE
+    'S': DARK_OAK_HANGING_SIGN
+    'G': GOLD_INGOT
+
+mensagens:
+  sem_bateria: "&cO seu AeriaGPS ficou sem bateria e perdeu o sinal."
+  interferencia: "&4[!] INTERFERÊNCIA DE SINAL DETECTADA [!]"
+  item_recebido: "&aVocê recebeu um AeriaGPS."
+  sem_permissao: "&cVocê não tem permissão para usar este comando."
