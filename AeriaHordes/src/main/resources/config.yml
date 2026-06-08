@@ -1,0 +1,65 @@
+settings:
+  check-interval-ticks: 40
+
+horde-night:
+  days-interval: 3
+  zombie-health: 80.0 # Vida customizada alta para compensar a menor quantidade
+  zombie-buffs:
+    - "speed:0"
+    - "strength:1" # Aumenta o dano causado para torná-los perigosos
+    - "resistance:1" # Reduz o dano sofrido, tornando-os difíceis de matar
+  bossbar:
+    text: "&cA Horda Está Ativa - Sobreviva!"
+    color: "RED"
+    style: "SOLID"
+
+noise-system:
+  enabled: true
+  chunk-threshold: 100
+  points:
+    running: 5
+    block-break: 15
+    weapon-fire: 50
+
+siege:
+  allow-block-destruction: true
+  breakable-blocks:
+    - "OAK_PLANKS"
+    - "IRON_BARS"
+    - "OAK_DOOR"
+  hits-required-to-break: 15 # Mais resistência nas barreiras contra os zumbis fortes
+
+spawning:
+  max-zombies-per-player: 10 # Limite reduzido por jogador para evitar lag em grupos
+  global-max-zombies: 40 # Limite máximo global rígido no servidor para proteção de performance
+  group-size: 5 # Spawna estritamente em grupos de 5 zumbis por onda
+  min-distance: 15
+  max-distance: 35
+
+allowed-worlds:
+  - "world"
+  - "cidade_apocalypse"
+
+# --- INÍCIO DA ADIÇÃO ---
+convert-natural-spawns: true
+
+infested-regions:
+  hospital_abandonado:
+    world: "cidade_apocalypse"
+    x: 120.0
+    y: 64.0
+    z: -340.0
+    radius: 30.0
+    max-zombies: 15
+    group-size: 3
+    zombie-health: 120.0
+  centro_urbano:
+    world: "cidade_apocalypse"
+    x: 0.0
+    y: 70.0
+    z: 0.0
+    radius: 50.0
+    max-zombies: 25
+    group-size: 5
+    zombie-health: 90.0
+# --- FIM DA ADIÇÃO ---

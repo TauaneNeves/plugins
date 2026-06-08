@@ -1,0 +1,8 @@
+name: AeriaHordes
+version: 1.0.0
+main: com.aeriaplugins.hordes.AeriaHordes
+api-version: '1.21'
+commands:
+  aeriahordes:
+    description: Comando principal do sistema AeriaHordes
+    aliases: [hordes]
