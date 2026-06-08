@@ -29,42 +29,84 @@ temperature:
     water-modifier: -2.5
     near-fire: 5.0
 
-# Substituir o bloco custom-items.antibiotic existente
+modules:
+  weight: true
+  thirst: true
+  bleeding: true
+  radiation: true
+
+messages:
+  prefix: "&8[&eAeriaVitals&8] "
+  armor-restricted: "&cVocê só pode equipar proteções usando o menu do [F]!"
+  backpack-restricted: "&cVocê só pode colocar mochilas válidas neste slot!"
+  shield-restricted: "&cEste slot aceita apenas o Escudo nativo do jogo!"
+  offhand-occupied: "&cO slot secundário já está ocupado por outro dispositivo (GPS/Bússola)!"
+  mask-restricted: "&cEste slot aceita apenas Máscaras!"
+  helmet-restricted: "&cEste slot aceita apenas Capacetes!"
+  chestplate-restricted: "&cEste slot aceita apenas Coletes / Peitorais!"
+  leggings-restricted: "&cEste slot aceita apenas Calças!"
+  boots-restricted: "&cEste slot aceita apenas Botas!"
+  dehydration-warning: "&cVocê está morrendo de desidratação! Encontre água potável."
+  bleeding-zombie: "&cO zumbi rasgou sua pele! Você começou a sangrar."
+  bleeding-fall: "&cO impacto da queda fraturou feio e você começou a sangrar!"
+  bleeding-warning: "&cVocê está sangrando! Use uma bandagem para estancar o ferimento."
+  morphine-end: "&cO efeito da morfina acabou. Seu corpo está sofrendo crises de abstinência e náuseas."
+  radiation-warning-outer: "&6[!] Você entrou em uma área de radiação moderada! Seu corpo está sofrendo alterações."
+  radiation-warning-inner: "&c[!!!] PERIGO! Você está no epicentro da radiação! Danos críticos aplicados."
+
 custom-items:
-  antibiotic:
+  dirty_bandage:
     material: "SUGAR"
     custom-model-data: 1001
-    display-name: "&aAntibiótico Geral"
-    infection-reduction: 30.0
-    immunity-boost: 10.0
-    use-message: "&aVocê tomou o Antibiótico. Infecção reduzida e Resfriado curado!"
+    display-name: "&6Bandagem Suja"
     lore:
-      - "&7Reduz a infecção em 30%"
-      - "&7Cura Resfriado/Gripe"
-  syringe:
-    syringe:
-    material: "FEATHER"
-    custom-model-data: 15002
-    display-name: "&cSeringa de Adrenalina"
-    infection-reduction: 0.0
-    immunity-boost: 40.0
-    use-message: "&cVocê injetou Adrenalina. Imunidade temporariamente aumentada!"
+      - "&7Estanca sangramento."
+      - "&c50% de chance de infecção."
+  sterile_bandage:
+    material: "SUGAR"
+    custom-model-data: 1002
+    display-name: "&aBandagem Estéril"
     lore:
-      - "&7Aumenta a imunidade em 40%"
-      # --- INÍCIO DA ADIÇÃO ---
+      - "&7Estanca sangramento com segurança."
+  morphine:
+    material: "SUGAR"
+    custom-model-data: 1003
+    display-name: "&dInjeção de Morfina"
+    lore:
+      - "&7Bloqueia a dor por 45s."
+  antibiotics:
+    material: "SUGAR"
+    custom-model-data: 1004
+    display-name: "&bAntibióticos"
+    lore:
+      - "&7Reduz a infecção em 20%."
+  mask_item:
+    material: "PAPER"
+    custom-model-data: 1005
+    display-name: "&eMáscara de Gás NBQ"
+    lore:
+      - "&7Protege contra zonas contaminadas."
+
+radiation-zones:
+  zone_hospital:
+    world: "world"
+    x: 100.0
+    y: 64.0
+    z: -250.0
+    outer-radius: 50.0
+    inner-radius: 15.0
+    outer-damage: 0.5
+    outer-infection: 0.2
+    inner-damage: 2.0
+    inner-infection: 1.5
+    mask-protection-factor: 1.0 # 1.0 = 100% de proteção contra radiação (0.0 = sem proteção)
+
 weight:
   default-max-weight: 50.0
   backpacks:
     leather_backpack:
-      display-name: "&6Mochila de Couro"
+      display-name: "Mochila de Couro"
       bonus-weight: 25.0
     military_backpack:
-      display-name: "&5Mochila Militar"
+      display-name: "Mochila Militar"
       bonus-weight: 60.0
-  items:
-    STONE: 0.5
-    COBBLESTONE: 0.4
-    IRON_INGOT: 0.3
-    GOLD_INGOT: 0.4
-    DIAMOND: 0.1
-# --- FIM DA ADIÇÃO ---

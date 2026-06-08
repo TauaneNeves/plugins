@@ -55,28 +55,36 @@ public class InventoryListener implements Listener {
 
     public void openEquipmentMenu(Player player) {
         Inventory gui = org.bukkit.Bukkit.createInventory(null, 36, "§8Equipamentos e Mochila");
-        
+
         ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta glassMeta = glass.getItemMeta();
         if (glassMeta != null) {
             glassMeta.setDisplayName("§7 ");
             glass.setItemMeta(glassMeta);
         }
-        
+
         for (int i = 0; i < 36; i++) {
             gui.setItem(i, glass);
         }
-        
+
         PlayerData data = plugin.getPlayerData(player);
-        
-        gui.setItem(2, data.getCustomMascara() != null ? data.getCustomMascara() : createVisualPlaceholder(Material.WHITE_STAINED_GLASS_PANE, "Slot de Máscara"));
-        gui.setItem(3, data.getCustomHelmet() != null ? data.getCustomHelmet() : createVisualPlaceholder(Material.CHAINMAIL_HELMET, "Slot de Cabeça / Capacete"));
-        gui.setItem(12, data.getCustomChestplate() != null ? data.getCustomChestplate() : createVisualPlaceholder(Material.IRON_CHESTPLATE, "Slot de Peitoral / Colete"));
-        gui.setItem(21, data.getCustomLeggings() != null ? data.getCustomLeggings() : createVisualPlaceholder(Material.IRON_LEGGINGS, "Slot de Calça"));
-        gui.setItem(30, data.getCustomBoots() != null ? data.getCustomBoots() : createVisualPlaceholder(Material.IRON_BOOTS, "Slot de Bota"));
-        
-        gui.setItem(14, data.getCustomBackpack() != null ? data.getCustomBackpack() : createVisualPlaceholder(Material.CHEST, "Slot de Mochila"));
-        
+
+        gui.setItem(2, data.getCustomMascara() != null ? data.getCustomMascara()
+                : createVisualPlaceholder(Material.WHITE_STAINED_GLASS_PANE, "Slot de Máscara"));
+        gui.setItem(3, data.getCustomHelmet() != null ? data.getCustomHelmet()
+                : createVisualPlaceholder(Material.CHAINMAIL_HELMET, "Slot de Cabeça / Capacete"));
+        gui.setItem(11, data.getCustomShield() != null ? data.getCustomShield()
+                : createVisualPlaceholder(Material.SHIELD, "Slot de Escudo NATIVO"));
+        gui.setItem(12, data.getCustomChestplate() != null ? data.getCustomChestplate()
+                : createVisualPlaceholder(Material.IRON_CHESTPLATE, "Slot de Peitoral / Colete"));
+        gui.setItem(21, data.getCustomLeggings() != null ? data.getCustomLeggings()
+                : createVisualPlaceholder(Material.IRON_LEGGINGS, "Slot de Calça"));
+        gui.setItem(30, data.getCustomBoots() != null ? data.getCustomBoots()
+                : createVisualPlaceholder(Material.IRON_BOOTS, "Slot de Bota"));
+
+        gui.setItem(14, data.getCustomBackpack() != null ? data.getCustomBackpack()
+                : createVisualPlaceholder(Material.CHEST, "Slot de Mochila"));
+
         player.openInventory(gui);
     }
 
@@ -102,13 +110,15 @@ public class InventoryListener implements Listener {
 
         if (tier == 0) {
             for (int i = 18; i <= 35; i++) {
-                if (player.getInventory().getItem(i) == null || player.getInventory().getItem(i).getType() == Material.AIR) {
+                if (player.getInventory().getItem(i) == null
+                        || player.getInventory().getItem(i).getType() == Material.AIR) {
                     player.getInventory().setItem(i, barrier);
                 }
             }
         } else if (tier == 1) {
             for (int i = 27; i <= 35; i++) {
-                if (player.getInventory().getItem(i) == null || player.getInventory().getItem(i).getType() == Material.AIR) {
+                if (player.getInventory().getItem(i) == null
+                        || player.getInventory().getItem(i).getType() == Material.AIR) {
                     player.getInventory().setItem(i, barrier);
                 }
             }
@@ -120,6 +130,18 @@ public class InventoryListener implements Listener {
         player.getInventory().setChestplate(data.getCustomChestplate());
         player.getInventory().setLeggings(data.getCustomLeggings());
         player.getInventory().setBoots(data.getCustomBoots());
+
+        ItemStack currentOffHand = player.getInventory().getItemInOffHand();
+        if (data.getCustomShield() != null) {
+            if (currentOffHand == null || currentOffHand.getType() == Material.AIR
+                    || currentOffHand.isSimilar(data.getCustomShield())) {
+                player.getInventory().setItemInOffHand(data.getCustomShield());
+            }
+        } else {
+            if (currentOffHand != null && currentOffHand.getType() == Material.SHIELD) {
+                player.getInventory().setItemInOffHand(null);
+            }
+        }
     }
 
     @EventHandler
@@ -154,9 +176,30 @@ public class InventoryListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
+        ItemStack clicked = event.getCurrentItem();
+        ItemStack cursor = event.getCursor();
+
+        if ((clicked != null && clicked.getType() == Material.BLACK_STAINED_GLASS_PANE && clicked.hasItemMeta()
+                && "§c[Bloqueado - Requer Mochila]".equals(clicked.getItemMeta().getDisplayName())) ||
+                (cursor != null && cursor.getType() == Material.BLACK_STAINED_GLASS_PANE && cursor.hasItemMeta()
+                        && "§c[Bloqueado - Requer Mochila]".equals(cursor.getItemMeta().getDisplayName()))) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (event.getClick() == org.bukkit.event.inventory.ClickType.NUMBER_KEY) {
+            ItemStack hotbarItem = event.getWhoClicked().getInventory().getItem(event.getHotbarButton());
+            if (hotbarItem != null && hotbarItem.getType() == Material.BLACK_STAINED_GLASS_PANE
+                    && hotbarItem.hasItemMeta()
+                    && "§c[Bloqueado - Requer Mochila]".equals(hotbarItem.getItemMeta().getDisplayName())) {
+                event.setCancelled(true);
+                return;
+            }
+        }
+
         String title = event.getView().getTitle();
         Player player = (Player) event.getWhoClicked();
-        
+
         if (event.getSlotType() == InventoryType.SlotType.ARMOR) {
             event.setCancelled(true);
             player.sendMessage("§cVocê só pode equipar proteções usando o menu do [F]!");
@@ -165,31 +208,35 @@ public class InventoryListener implements Listener {
 
         if (event.isShiftClick() && event.getCurrentItem() != null) {
             String name = event.getCurrentItem().getType().name();
-            if (name.contains("HELMET") || name.contains("CHESTPLATE") || name.contains("LEGGINGS") || name.contains("BOOTS")) {
+            if (name.contains("HELMET") || name.contains("CHESTPLATE") || name.contains("LEGGINGS")
+                    || name.contains("BOOTS") || name.equals("SHIELD")) {
                 event.setCancelled(true);
-                player.sendMessage("§cVocê só pode equipar proteções usando o menu do [F]!");
+                player.sendMessage("§cVocê só pode equipar proteções e escudos usando o menu do [F]!");
                 return;
             }
         }
 
         if (title.equals("§8Equipamentos e Mochila")) {
             event.setCancelled(true);
-            
+
             Inventory clickedInv = event.getClickedInventory();
-            if (clickedInv == null) return;
+            if (clickedInv == null)
+                return;
 
             PlayerData data = plugin.getPlayerData(player);
 
-            // --- INTERAÇÃO 1: CLIQUE DIRETO NO SEU INVENTÁRIO (EQUIPAR DIRETO) ---
             if (clickedInv == event.getView().getBottomInventory()) {
                 ItemStack clickedItem = event.getCurrentItem();
-                if (clickedItem == null || clickedItem.getType() == Material.AIR) return;
+                if (clickedItem == null || clickedItem.getType() == Material.AIR)
+                    return;
 
                 String matName = clickedItem.getType().name();
-                String leatherName = org.bukkit.ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getConfig().getString("weight.backpacks.leather_backpack.display-name", "Mochila de Couro"));
-                String militaryName = org.bukkit.ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getConfig().getString("weight.backpacks.military_backpack.display-name", "Mochila Militar"));
+                String leatherName = org.bukkit.ChatColor.translateAlternateColorCodes('&',
+                        plugin.getConfig().getString("weight.backpacks.leather_backpack.display-name",
+                                "Mochila de Couro"));
+                String militaryName = org.bukkit.ChatColor.translateAlternateColorCodes('&',
+                        plugin.getConfig().getString("weight.backpacks.military_backpack.display-name",
+                                "Mochila Militar"));
 
                 boolean isBackpack = false;
                 if (clickedItem.hasItemMeta() && clickedItem.getItemMeta().hasDisplayName()) {
@@ -200,17 +247,38 @@ public class InventoryListener implements Listener {
                 }
 
                 int targetSlot = -1;
-                if (isBackpack) targetSlot = 14;
-                else if (matName.contains("HELMET")) targetSlot = 3;
-                else if (matName.contains("CHESTPLATE")) targetSlot = 12;
-                else if (matName.contains("LEGGINGS")) targetSlot = 21;
-                else if (matName.contains("BOOTS")) targetSlot = 30;
-                else if (clickedItem.hasItemMeta() && clickedItem.getItemMeta().hasDisplayName() && 
-                         clickedItem.getItemMeta().getDisplayName().toLowerCase().contains("mascara")) {
+                if (isBackpack)
+                    targetSlot = 14;
+                else if (matName.equals("SHIELD"))
+                    targetSlot = 11;
+                else if (matName.contains("HELMET"))
+                    targetSlot = 3;
+                else if (matName.contains("CHESTPLATE"))
+                    targetSlot = 12;
+                else if (matName.contains("LEGGINGS"))
+                    targetSlot = 21;
+                // Âncora de contexto anterior existente no arquivo:
+                else if (matName.contains("BOOTS"))
+                    targetSlot = 30;
+                // Substituir a validação antiga da máscara por esta correta ligada a config:
+                else if (clickedItem.hasItemMeta() && clickedItem.getItemMeta().hasCustomModelData() &&
+                        clickedItem.getItemMeta().getCustomModelData() == plugin.getConfig()
+                                .getInt("custom-items.mask_item.custom-model-data", 1005)) {
                     targetSlot = 2;
                 }
-
+                // Âncora de contexto posterior existente no arquivo:
                 if (targetSlot != -1) {
+                    if (targetSlot == 11) {
+                        ItemStack currentOffHand = player.getInventory().getItemInOffHand();
+                        if (currentOffHand != null && currentOffHand.getType() != Material.AIR) {
+                            if (data.getCustomShield() == null || !currentOffHand.isSimilar(data.getCustomShield())) {
+                                player.sendMessage(
+                                        "§cO slot secundário já está ocupado por outro dispositivo (GPS/Bússola)!");
+                                return;
+                            }
+                        }
+                    }
+
                     ItemStack storedItem = getSlotData(targetSlot, data);
                     setSlotData(targetSlot, data, clickedItem.clone());
                     event.setCurrentItem(storedItem != null ? storedItem.clone() : null);
@@ -225,26 +293,27 @@ public class InventoryListener implements Listener {
                 return;
             }
 
-            // --- INTERAÇÃO 2: CLIQUE DENTRO DA GUI DE EQUIPAMENTOS (DESEQUIPAR DIRETO) ---
             int slot = event.getSlot();
-            if (slot != 2 && slot != 3 && slot != 12 && slot != 21 && slot != 30 && slot != 14) return;
+            if (slot != 2 && slot != 3 && slot != 11 && slot != 12 && slot != 21 && slot != 30 && slot != 14)
+                return;
 
             ItemStack currentItem = event.getCurrentItem();
-            ItemStack cursor = event.getCursor();
 
-            boolean isPlaceholder = currentItem != null && currentItem.hasItemMeta() && 
-                                    currentItem.getItemMeta().getDisplayName() != null &&
-                                    currentItem.getItemMeta().getDisplayName().startsWith("§7[Vazio]");
+            boolean isPlaceholder = currentItem != null && currentItem.hasItemMeta() &&
+                    currentItem.getItemMeta().getDisplayName() != null &&
+                    currentItem.getItemMeta().getDisplayName().startsWith("§7[Vazio]");
 
             ItemStack storedItem = getSlotData(slot, data);
 
             if (cursor != null && cursor.getType() != Material.AIR) {
                 String matName = cursor.getType().name();
-                
-                String leatherName = org.bukkit.ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getConfig().getString("weight.backpacks.leather_backpack.display-name", "Mochila de Couro"));
-                String militaryName = org.bukkit.ChatColor.translateAlternateColorCodes('&', 
-                    plugin.getConfig().getString("weight.backpacks.military_backpack.display-name", "Mochila Militar"));
+
+                String leatherName = org.bukkit.ChatColor.translateAlternateColorCodes('&',
+                        plugin.getConfig().getString("weight.backpacks.leather_backpack.display-name",
+                                "Mochila de Couro"));
+                String militaryName = org.bukkit.ChatColor.translateAlternateColorCodes('&',
+                        plugin.getConfig().getString("weight.backpacks.military_backpack.display-name",
+                                "Mochila Militar"));
 
                 boolean isBackpack = false;
                 if (cursor.hasItemMeta() && cursor.getItemMeta().hasDisplayName()) {
@@ -263,6 +332,20 @@ public class InventoryListener implements Listener {
                     player.sendMessage("§cEste slot aceita apenas Capacetes!");
                     return;
                 }
+                if (slot == 11) {
+                    if (!matName.equals("SHIELD")) {
+                        player.sendMessage("§cEste slot aceita apenas o Escudo nativo do jogo!");
+                        return;
+                    }
+                    ItemStack currentOffHand = player.getInventory().getItemInOffHand();
+                    if (currentOffHand != null && currentOffHand.getType() != Material.AIR) {
+                        if (data.getCustomShield() == null || !currentOffHand.isSimilar(data.getCustomShield())) {
+                            player.sendMessage(
+                                    "§cO slot secundário já está ocupado por outro dispositivo (GPS/Bússola)!");
+                            return;
+                        }
+                    }
+                }
                 if (slot == 12 && !matName.contains("CHESTPLATE")) {
                     player.sendMessage("§cEste slot aceita apenas Coletes / Peitorais!");
                     return;
@@ -275,7 +358,8 @@ public class InventoryListener implements Listener {
                     player.sendMessage("§cEste slot aceita apenas Botas!");
                     return;
                 }
-                if (slot == 2 && (matName.contains("HELMET") || matName.contains("CHESTPLATE") || matName.contains("LEGGINGS") || matName.contains("BOOTS"))) {
+                if (slot == 2 && (matName.contains("HELMET") || matName.contains("CHESTPLATE")
+                        || matName.contains("LEGGINGS") || matName.contains("BOOTS") || matName.equals("SHIELD"))) {
                     player.sendMessage("§cEste slot aceita apenas Máscaras!");
                     return;
                 }
@@ -283,9 +367,9 @@ public class InventoryListener implements Listener {
                 event.setCursor(isPlaceholder ? null : storedItem.clone());
                 setSlotData(slot, data, cursor.clone());
             } else {
-                if (isPlaceholder) return;
-                
-                // Envia o item direto de volta para os quadradinhos do inventário inferior
+                if (isPlaceholder)
+                    return;
+
                 HashMap<Integer, ItemStack> leftOver = player.getInventory().addItem(storedItem.clone());
                 if (!leftOver.isEmpty()) {
                     player.getWorld().dropItemNaturally(player.getLocation(), storedItem);
@@ -302,34 +386,42 @@ public class InventoryListener implements Listener {
             return;
         }
 
-        ItemStack clicked = event.getCurrentItem();
-        if (clicked != null && clicked.getType() == Material.BLACK_STAINED_GLASS_PANE && clicked.hasItemMeta()) {
-            if (clicked.getItemMeta().getDisplayName().equals("§c[Bloqueado - Requer Mochila]")) {
-                event.setCancelled(true);
-                return;
-            }
-        }
-
         plugin.getServer().getScheduler().runTask(plugin, () -> weightManager.recalculateWeight(player));
     }
 
     private ItemStack getSlotData(int slot, PlayerData data) {
-        if (slot == 2) return data.getCustomMascara();
-        if (slot == 3) return data.getCustomHelmet();
-        if (slot == 12) return data.getCustomChestplate();
-        if (slot == 21) return data.getCustomLeggings();
-        if (slot == 30) return data.getCustomBoots();
-        if (slot == 14) return data.getCustomBackpack();
+        if (slot == 2)
+            return data.getCustomMascara();
+        if (slot == 3)
+            return data.getCustomHelmet();
+        if (slot == 11)
+            return data.getCustomShield();
+        if (slot == 12)
+            return data.getCustomChestplate();
+        if (slot == 21)
+            return data.getCustomLeggings();
+        if (slot == 30)
+            return data.getCustomBoots();
+        if (slot == 14)
+            return data.getCustomBackpack();
         return null;
     }
 
     private void setSlotData(int slot, PlayerData data, ItemStack item) {
-        if (slot == 2) data.setCustomMascara(item);
-        if (slot == 3) data.setCustomHelmet(item);
-        if (slot == 12) data.setCustomChestplate(item);
-        if (slot == 21) data.setCustomLeggings(item);
-        if (slot == 30) data.setCustomBoots(item);
-        if (slot == 14) data.setCustomBackpack(item);
+        if (slot == 2)
+            data.setCustomMascara(item);
+        if (slot == 3)
+            data.setCustomHelmet(item);
+        if (slot == 11)
+            data.setCustomShield(item);
+        if (slot == 12)
+            data.setCustomChestplate(item);
+        if (slot == 21)
+            data.setCustomLeggings(item);
+        if (slot == 30)
+            data.setCustomBoots(item);
+        if (slot == 14)
+            data.setCustomBackpack(item);
     }
 
     @EventHandler
@@ -380,16 +472,19 @@ public class InventoryListener implements Listener {
         Player player = event.getEntity();
         PlayerData data = plugin.getPlayerData(player);
 
-        event.getDrops().removeIf(item -> item != null && item.getType() == Material.BLACK_STAINED_GLASS_PANE && item.hasItemMeta() &&
-                item.getItemMeta().getDisplayName().equals("§c[Bloqueado - Requer Mochila]"));
+        event.getDrops()
+                .removeIf(item -> item != null && item.getType() == Material.BLACK_STAINED_GLASS_PANE
+                        && item.hasItemMeta() &&
+                        item.getItemMeta().getDisplayName().equals("§c[Bloqueado - Requer Mochila]"));
 
         ItemStack[] customSlots = {
-            data.getCustomHelmet(), 
-            data.getCustomMascara(),
-            data.getCustomChestplate(), 
-            data.getCustomLeggings(), 
-            data.getCustomBoots(), 
-            data.getCustomBackpack()
+                data.getCustomHelmet(),
+                data.getCustomMascara(),
+                data.getCustomChestplate(),
+                data.getCustomLeggings(),
+                data.getCustomBoots(),
+                data.getCustomBackpack(),
+                data.getCustomShield()
         };
         for (ItemStack item : customSlots) {
             if (item != null && !item.getType().isAir()) {
@@ -403,6 +498,7 @@ public class InventoryListener implements Listener {
         data.setCustomLeggings(null);
         data.setCustomBoots(null);
         data.setCustomBackpack(null);
+        data.setCustomShield(null);
     }
 
     @EventHandler
@@ -435,15 +531,17 @@ public class InventoryListener implements Listener {
     public void onInteract(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        
-        if (item != null && (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK)) {
+
+        if (item != null && (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
+                || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK)) {
             String name = item.getType().name();
-            if (name.contains("HELMET") || name.contains("CHESTPLATE") || name.contains("LEGGINGS") || name.contains("BOOTS")) {
+            if (name.contains("HELMET") || name.contains("CHESTPLATE") || name.contains("LEGGINGS")
+                    || name.contains("BOOTS")) {
                 event.setCancelled(true);
                 player.sendMessage("§cVocê só pode equipar proteções usando o menu do [F]!");
                 return;
             }
-            
+
             if (medicalManager.useMedicalItem(player, item)) {
                 event.setCancelled(true);
                 if (item.getAmount() > 1) {

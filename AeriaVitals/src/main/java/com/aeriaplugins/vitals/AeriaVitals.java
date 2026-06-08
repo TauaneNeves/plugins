@@ -1,85 +1,87 @@
 package com.aeriaplugins.vitals;
 
-import com.aeriaplugins.commands.VitalsCommand;
+import com.aeriaplugins.commands.RadiationCommand;
 import com.aeriaplugins.data.PlayerData;
 import com.aeriaplugins.data.StorageManager;
-import com.aeriaplugins.listeners.InfectionListener;
-import com.aeriaplugins.listeners.MedicalListener;
 import com.aeriaplugins.listeners.InventoryListener;
-import com.aeriaplugins.listeners.PlayerListener;
-import com.aeriaplugins.tasks.VitalsTickTask;
+import com.aeriaplugins.tasks.SurvivalTickTask;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class AeriaVitals extends JavaPlugin implements Listener {
+public class AeriaVitals extends JavaPlugin {
 
-    private static AeriaVitals instance;
     private final Map<UUID, PlayerData> playerDataMap = new HashMap<>();
     private StorageManager storageManager;
+    private static AeriaVitals instance;
 
     @Override
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
+        
         this.storageManager = new StorageManager(this);
 
-        getServer().getPluginManager().registerEvents(this, this);
-        getServer().getPluginManager().registerEvents(new MedicalListener(this), this);
-        getServer().getPluginManager().registerEvents(new InfectionListener(this), this);
+        if (this.getCommand("radiacao") != null) {
+            this.getCommand("radiacao").setExecutor(new RadiationCommand(this));
+        }
+
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
-        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
 
-        VitalsCommand vitalsCommand = new VitalsCommand(this);
-        getCommand("vitals").setExecutor(vitalsCommand);
-        getCommand("vitals").setTabCompleter(vitalsCommand);
+        new SurvivalTickTask(this).runTaskTimer(this, 20L, 20L);
 
-        long tickRate = getConfig().getLong("settings.update-tick-rate", 20L);
-        new VitalsTickTask(this).runTaskTimer(this, 0L, tickRate);
-
-        getLogger().info("AeriaVitals ativado com sucesso.");
+        for (Player player : getServer().getOnlinePlayers()) {
+            PlayerData data = new PlayerData();
+            playerDataMap.put(player.getUniqueId(), data);
+            storageManager.loadPlayerData(player, data);
+        }
+        
+        getLogger().info("AeriaVitals iniciado com sucesso e sistema de sobrevivencia ativo!");
     }
 
     @Override
     public void onDisable() {
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (playerDataMap.containsKey(player.getUniqueId())) {
+                storageManager.savePlayerData(player);
+            }
+        }
         playerDataMap.clear();
-        getLogger().info("AeriaVitals desativado.");
+        getLogger().info("AeriaVitals desligado com sucesso!");
     }
 
-    public static AeriaVitals getInstance() {
-        return instance;
-    }
-
-    public StorageManager getStorageManager() {
-        return storageManager;
+    public PlayerData getPlayerData(Player player) {
+        UUID uuid = player.getUniqueId();
+        if (!playerDataMap.containsKey(uuid)) {
+            PlayerData data = new PlayerData();
+            playerDataMap.put(uuid, data);
+            if (storageManager != null) {
+                storageManager.loadPlayerData(player, data);
+            }
+        }
+        return playerDataMap.get(uuid);
     }
 
     public Map<UUID, PlayerData> getPlayerDataMap() {
         return playerDataMap;
     }
 
-    public PlayerData getPlayerData(Player player) {
-        return playerDataMap.computeIfAbsent(player.getUniqueId(), k -> new PlayerData());
+    public static AeriaVitals getInstance() {
+        return instance;
     }
 
     public void removePlayerData(Player player) {
-        playerDataMap.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        if (playerDataMap.containsKey(uuid)) {
+            storageManager.savePlayerData(player);
+            playerDataMap.remove(uuid);
+        }
     }
 
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        getPlayerData(event.getPlayer());
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        playerDataMap.remove(event.getPlayer().getUniqueId());
+    public StorageManager getStorageManager() {
+        return storageManager;
     }
 }

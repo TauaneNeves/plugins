@@ -6,7 +6,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.PlayerKickEvent;
 
 public class PlayerListener implements Listener {
 
@@ -17,21 +17,24 @@ public class PlayerListener implements Listener {
     }
 
     @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        plugin.getStorageManager().loadPlayerData(event.getPlayer());
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        plugin.getStorageManager().loadPlayerData(player, plugin.getPlayerData(player));
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (player.isOnline()) {
+                plugin.getStorageManager().loadPlayerData(player, plugin.getPlayerData(player));
+            }
+        }, 2L);
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        plugin.getStorageManager().savePlayerData(player);
-        plugin.removePlayerData(player);
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        plugin.removePlayerData(event.getPlayer());
     }
 
     @EventHandler
-    public void onRespawn(PlayerRespawnEvent event) {
-        Player player = event.getPlayer();
-        plugin.removePlayerData(player);
-        plugin.getStorageManager().loadPlayerData(player);
+    public void onPlayerKick(PlayerKickEvent event) {
+        plugin.removePlayerData(event.getPlayer());
     }
 }

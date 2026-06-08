@@ -6,3 +6,7 @@ commands:
   aeriavitals:
     description: Comando principal do sistema AeriaVitals
     aliases: [vitals]
+  radiacao:
+    description: Configura zonas de radiacao no mapa.
+    permission: aeriavitals.admin
+    usage: /radiacao set <raio_interno> <raio_externo> <nome_da_zona>

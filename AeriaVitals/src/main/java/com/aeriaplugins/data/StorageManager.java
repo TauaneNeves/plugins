@@ -22,10 +22,9 @@ public class StorageManager {
         }
     }
 
-    public void loadPlayerData(Player player) {
+    public void loadPlayerData(Player player, PlayerData data) {
         UUID uuid = player.getUniqueId();
         File file = new File(dataFolder, uuid + ".yml");
-        PlayerData data = plugin.getPlayerData(player);
 
         if (!file.exists()) {
             data.setInfection(0.0);
@@ -35,6 +34,7 @@ public class StorageManager {
             data.setMaxWeight(50.0);
             data.setBleeding(false);
             data.setThirst(100.0);
+            data.setRadiation(0.0);
             return;
         }
 
@@ -46,6 +46,7 @@ public class StorageManager {
         data.setMaxWeight(config.getDouble("maxWeight", 50.0));
         data.setBleeding(config.getBoolean("bleeding", false));
         data.setThirst(config.getDouble("thirst", 100.0));
+        data.setRadiation(config.getDouble("radiation", 0.0));
         
         data.setCustomHelmet(config.getItemStack("equipment.helmet"));
         data.setCustomMascara(config.getItemStack("equipment.mascara"));
@@ -53,6 +54,7 @@ public class StorageManager {
         data.setCustomLeggings(config.getItemStack("equipment.leggings"));
         data.setCustomBoots(config.getItemStack("equipment.boots"));
         data.setCustomBackpack(config.getItemStack("equipment.backpack"));
+        data.setCustomShield(config.getItemStack("equipment.shield"));
     }
 
     public void savePlayerData(Player player) {
@@ -70,6 +72,7 @@ public class StorageManager {
         config.set("maxWeight", data.getMaxWeight());
         config.set("bleeding", data.isBleeding());
         config.set("thirst", data.getThirst());
+        config.set("radiation", data.getRadiation());
         
         config.set("equipment.helmet", data.getCustomHelmet());
         config.set("equipment.mascara", data.getCustomMascara());
@@ -77,6 +80,7 @@ public class StorageManager {
         config.set("equipment.leggings", data.getCustomLeggings());
         config.set("equipment.boots", data.getCustomBoots());
         config.set("equipment.backpack", data.getCustomBackpack());
+        config.set("equipment.shield", data.getCustomShield());
 
         try {
             config.save(file);

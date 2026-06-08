@@ -14,14 +14,15 @@ public class PlayerData {
     private boolean bleeding = false;
     private double thirst = 100.0;
     private int morphineTicks = 0;
+    private double radiation = 0.0;
 
-    // Slots simplificados: Apenas Armadura nativa, Máscara e Mochila
     private ItemStack customHelmet;
     private ItemStack customMascara;
     private ItemStack customChestplate;
     private ItemStack customLeggings;
     private ItemStack customBoots;
     private ItemStack customBackpack;
+    private ItemStack customShield;
 
     public double getInfection() {
         return infection;
@@ -99,6 +100,14 @@ public class PlayerData {
         this.morphineTicks = Math.max(0, morphineTicks);
     }
 
+    public double getRadiation() {
+        return radiation;
+    }
+
+    public void setRadiation(double radiation) {
+        this.radiation = Math.max(0.0, Math.min(100.0, radiation));
+    }
+
     public int getBackpackTier() {
         if (customBackpack == null || !customBackpack.hasItemMeta() || !customBackpack.getItemMeta().hasDisplayName()) {
             return 0;
@@ -126,4 +135,7 @@ public class PlayerData {
 
     public ItemStack getCustomBackpack() { return customBackpack; }
     public void setCustomBackpack(ItemStack customBackpack) { this.customBackpack = customBackpack; }
+
+    public ItemStack getCustomShield() { return customShield; }
+    public void setCustomShield(ItemStack customShield) { this.customShield = customShield; }
 }
