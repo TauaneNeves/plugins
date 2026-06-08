@@ -20,6 +20,7 @@ public class HordeManager {
 
     private final AeriaHordes plugin;
     private final Set<UUID> hordeZombies = new HashSet<>();
+    private final Map<UUID, String> zombieCustomNames = new HashMap<>();
     private final Map<org.bukkit.block.Block, Integer> blockHitsMap = new HashMap<>();
     private final Random random = new Random();
 
@@ -33,28 +34,60 @@ public class HordeManager {
 
     public void registerHordeZombie(Zombie zombie) {
         double defaultHealth = plugin.getConfig().getDouble("horde-night.zombie-health", 80.0);
-        registerHordeZombie(zombie, defaultHealth);
+        String defaultName = plugin.getConfig().getString("horde-night.zombie-name", "&cZumbi da Horda");
+        registerHordeZombie(zombie, defaultHealth, defaultName);
     }
 
-    public void registerHordeZombie(Zombie zombie, double customHealth) {
+    public void registerHordeZombie(Zombie zombie, double customHealth, String customName) {
         hordeZombies.add(zombie.getUniqueId());
+        zombieCustomNames.put(zombie.getUniqueId(), customName);
         applyAttributesAndBuffs(zombie, customHealth);
     }
 
-    public void updateZombieName(Zombie zombie) {
-        if (!isHordeZombie(zombie))
+    public void updateZombieName(Zombie zombie, double damageTaken) {
+        if (!isHordeZombie(zombie)) return;
+
+        boolean showName = plugin.getConfig().getBoolean("horde-night.show-name", true);
+        boolean showHealth = plugin.getConfig().getBoolean("horde-night.show-health", true);
+
+        if (!showName && !showHealth) {
+            zombie.setCustomNameVisible(false);
             return;
+        }
+
         AttributeInstance maxHealthAttr = zombie.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (maxHealthAttr != null) {
             int maxHealth = (int) maxHealthAttr.getValue();
-            int currentHealth = (int) zombie.getHealth();
-            zombie.setCustomName("§c[Horda] §fVida: §a" + currentHealth + "§7/§a" + maxHealth);
+            int currentHealth = (int) Math.max(0, zombie.getHealth() - damageTaken);
+
+            if (currentHealth <= 0) {
+                zombie.setCustomNameVisible(false);
+                return;
+            }
+
+            String baseName = zombieCustomNames.getOrDefault(zombie.getUniqueId(), plugin.getConfig().getString("horde-night.zombie-name", "&cZumbi"));
+            
+            String finalName;
+            if (showName && showHealth) {
+                String format = plugin.getConfig().getString("horde-night.name-format", "{name} &7[{current}/{max}❤]");
+                finalName = format.replace("{name}", baseName).replace("{current}", String.valueOf(currentHealth)).replace("{max}", String.valueOf(maxHealth));
+            } else if (showName) {
+                finalName = baseName;
+            } else {
+                finalName = "§c❤ " + currentHealth + "/" + maxHealth;
+            }
+
+            zombie.setCustomName(finalName.replace("&", "§"));
             zombie.setCustomNameVisible(true);
         }
     }
 
     public Set<UUID> getHordeZombies() {
         return hordeZombies;
+    }
+
+    public Map<UUID, String> getZombieCustomNames() {
+        return zombieCustomNames;
     }
 
     public void handleBlockSiege(Zombie zombie, org.bukkit.block.Block targetBlock) {
@@ -66,19 +99,16 @@ public class HordeManager {
             int requiredHits = plugin.getConfig().getInt("siege.hits-required-to-break", 15);
 
             if (targetBlock.getType().name().contains("WOOD") || targetBlock.getType().name().contains("DOOR")) {
-                targetBlock.getWorld().playSound(targetBlock.getLocation(),
-                        org.bukkit.Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1.0f, 1.0f);
+                targetBlock.getWorld().playSound(targetBlock.getLocation(), org.bukkit.Sound.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR, 1.0f, 1.0f);
             } else {
-                targetBlock.getWorld().playSound(targetBlock.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_HIT, 0.5f,
-                        0.5f);
+                targetBlock.getWorld().playSound(targetBlock.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_HIT, 0.5f, 0.5f);
             }
 
             if (currentHits >= requiredHits) {
                 blockHitsMap.remove(targetBlock);
                 targetBlock.getWorld().playEffect(targetBlock.getLocation(), org.bukkit.Effect.MOBSPAWNER_FLAMES, 0);
                 targetBlock.setType(org.bukkit.Material.AIR);
-                targetBlock.getWorld().playSound(targetBlock.getLocation(),
-                        org.bukkit.Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 1.0f, 1.0f);
+                targetBlock.getWorld().playSound(targetBlock.getLocation(), org.bukkit.Sound.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR, 1.0f, 1.0f);
             } else {
                 blockHitsMap.put(targetBlock, currentHits);
             }
@@ -88,10 +118,11 @@ public class HordeManager {
     public void spawnMiniHorde(Location center) {
         int count = plugin.getConfig().getInt("spawning.group-size", 5);
         double health = plugin.getConfig().getDouble("horde-night.zombie-health", 80.0);
-        spawnMiniHorde(center, health, count);
+        String name = plugin.getConfig().getString("horde-night.zombie-name", "&cZumbi da Horda");
+        spawnMiniHorde(center, health, count, name);
     }
 
-    public void spawnMiniHorde(Location center, double customHealth, int count) {
+    public void spawnMiniHorde(Location center, double customHealth, int count, String customName) {
         int globalMax = plugin.getConfig().getInt("spawning.global-max-zombies", 40);
         if (hordeZombies.size() >= globalMax) {
             return;
@@ -107,14 +138,14 @@ public class HordeManager {
 
             double angle = random.nextDouble() * 2 * Math.PI;
             double distance = minDistance + random.nextInt(maxDistance - minDistance);
-
+            
             double x = center.getX() + (distance * Math.cos(angle));
             double z = center.getZ() + (distance * Math.sin(angle));
             double y = center.getWorld().getHighestBlockYAt((int) x, (int) z);
 
             Location spawnLoc = new Location(center.getWorld(), x, y, z);
             Zombie zombie = (Zombie) center.getWorld().spawnEntity(spawnLoc, EntityType.ZOMBIE);
-            registerHordeZombie(zombie, customHealth);
+            registerHordeZombie(zombie, customHealth, customName);
         }
     }
 
@@ -138,14 +169,12 @@ public class HordeManager {
                 if (type != null) {
                     try {
                         int amp = Integer.parseInt(split[1]);
-                        zombie.addPotionEffect(
-                                new PotionEffect(type, PotionEffect.INFINITE_DURATION, amp, false, false));
-                    } catch (NumberFormatException ignored) {
-                    }
+                        zombie.addPotionEffect(new PotionEffect(type, PotionEffect.INFINITE_DURATION, amp, false, false));
+                    } catch (NumberFormatException ignored) {}
                 }
             }
         }
-        updateZombieName(zombie);
+        updateZombieName(zombie, 0.0);
     }
 
     public int clearAllZombies() {
@@ -158,6 +187,7 @@ public class HordeManager {
             }
         }
         hordeZombies.clear();
+        zombieCustomNames.clear();
         blockHitsMap.clear();
         return count;
     }

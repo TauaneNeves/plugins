@@ -44,9 +44,9 @@ public class HordeTrackerTask extends BukkitRunnable {
             }
         }
 
-        // --- INÍCIO DA ADIÇÃO ---
         org.bukkit.configuration.ConfigurationSection regionsSection = plugin.getConfig().getConfigurationSection("infested-regions");
         if (regionsSection != null) {
+            int globalMax = plugin.getConfig().getInt("spawning.global-max-zombies", 40);
             for (String key : regionsSection.getKeys(false)) {
                 String worldName = regionsSection.getString(key + ".world");
                 double x = regionsSection.getDouble(key + ".x");
@@ -56,6 +56,7 @@ public class HordeTrackerTask extends BukkitRunnable {
                 int maxZombies = regionsSection.getInt(key + ".max-zombies");
                 int groupSize = regionsSection.getInt(key + ".group-size");
                 double health = regionsSection.getDouble(key + ".zombie-health");
+                String name = regionsSection.getString(key + ".zombie-name", "&cZumbi");
 
                 org.bukkit.World world = Bukkit.getWorld(worldName);
                 if (world == null) continue;
@@ -71,18 +72,17 @@ public class HordeTrackerTask extends BukkitRunnable {
                 }
 
                 int remaining = maxZombies - currentInRegion;
-                if (remaining > 0) {
+                if (remaining > 0 && plugin.getHordeManager().getHordeZombies().size() < globalMax) {
                     for (Player player : Bukkit.getOnlinePlayers()) {
                         if (player.getWorld().equals(world) && player.getLocation().distance(regionCenter) <= radius) {
                             int spawnCount = Math.min(groupSize, remaining);
-                            plugin.getHordeManager().spawnMiniHorde(player.getLocation(), health, spawnCount);
+                            plugin.getHordeManager().spawnMiniHorde(player.getLocation(), health, spawnCount, name);
                             break;
                         }
                     }
                 }
             }
         }
-        // --- FIM DA ADIÇÃO ---
 
         for (UUID uuid : plugin.getHordeManager().getHordeZombies()) {
             org.bukkit.entity.Entity entity = Bukkit.getEntity(uuid);

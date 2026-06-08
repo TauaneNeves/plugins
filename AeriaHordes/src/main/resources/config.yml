@@ -3,11 +3,15 @@ settings:
 
 horde-night:
   days-interval: 3
-  zombie-health: 80.0 # Vida customizada alta para compensar a menor quantidade
+  zombie-health: 80.0
+  zombie-name: ""
+  show-name: true
+  show-health: true
+  name-format: "{name} &7[&a{current}/{max}❤&7]"
   zombie-buffs:
     - "speed:0"
-    - "strength:1" # Aumenta o dano causado para torná-los perigosos
-    - "resistance:1" # Reduz o dano sofrido, tornando-os difíceis de matar
+    - "strength:1"
+    - "resistance:1"
   bossbar:
     text: "&cA Horda Está Ativa - Sobreviva!"
     color: "RED"
@@ -27,21 +31,18 @@ siege:
     - "OAK_PLANKS"
     - "IRON_BARS"
     - "OAK_DOOR"
-  hits-required-to-break: 15 # Mais resistência nas barreiras contra os zumbis fortes
+  hits-required-to-break: 15
 
 spawning:
-  max-zombies-per-player: 10 # Limite reduzido por jogador para evitar lag em grupos
-  global-max-zombies: 40 # Limite máximo global rígido no servidor para proteção de performance
-  group-size: 5 # Spawna estritamente em grupos de 5 zumbis por onda
+  max-zombies-per-player: 10
+  global-max-zombies: 40
+  group-size: 5
   min-distance: 15
   max-distance: 35
 
 allowed-worlds:
   - "world"
   - "cidade_apocalypse"
-
-# --- INÍCIO DA ADIÇÃO ---
-convert-natural-spawns: true
 
 infested-regions:
   hospital_abandonado:
@@ -53,13 +54,14 @@ infested-regions:
     max-zombies: 15
     group-size: 3
     zombie-health: 120.0
-  centro_urbano:
+    zombie-name: "&9Zumbi Mutante"
+  area_militar:
     world: "cidade_apocalypse"
-    x: 0.0
-    y: 70.0
-    z: 0.0
-    radius: 50.0
-    max-zombies: 25
+    x: 500.0
+    y: 65.0
+    z: 250.0
+    radius: 45.0
+    max-zombies: 20
     group-size: 5
-    zombie-health: 90.0
-# --- FIM DA ADIÇÃO ---
+    zombie-health: 100.0
+    zombie-name: "&eZumbi Militar"
