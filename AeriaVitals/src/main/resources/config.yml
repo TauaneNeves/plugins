@@ -10,55 +10,61 @@ infection:
     level-2:
       trigger-percentage: 80.0
 
+# Inserir no bloco 'temperature' existente
 temperature:
-  base-change-rate: 0.2
+  base-body-temperature: 36.5 # Temperatura corporal normal
+  heat-damage-threshold: 39.5 # Acima disso, toma dano de calor
+  cold-damage-threshold: 35.0 # Abaixo disso, toma dano de frio
+  cold-chance-percentage: 5.0 # Chance de pegar resfriado se estiver molhado e com frio
   biomes:
-    DESERT: 1.5
-    BADLANDS: 1.2
-    SNOWY_PLAINS: -2.0
-    SNOWY_TAIGA: -1.8
-    ICE_SPIKES: -2.5
-    NETHER_WASTES: 3.0
+    DESERT: 4.0
+    BADLANDS: 3.5
+    SNOWY_PLAINS: -4.0
+    SNOWY_TAIGA: -3.5
+    ICE_SPIKES: -5.0
+    NETHER_WASTES: 10.0
   modifiers:
-    night-penalty: -0.5
-    rain-penalty: -0.8
-    near-fire: 2.5
+    night-penalty: -1.0
+    rain-penalty: -1.5
+    water-modifier: -2.5
+    near-fire: 5.0
 
-weight:
-  default-max-weight: 50.0
-  items:
-    STONE: 1.5
-    COBBLESTONE: 1.3
-    IRON_INGOT: 2.0
-    GOLD_INGOT: 2.5
-    DIAMOND: 1.0
-    ROTTEN_FLESH: 0.1
-    APPLE: 0.2
-    BREAD: 0.2
-  backpacks:
-    leather_backpack:
-      display-name: "&6Mochila de Couro"
-      bonus-weight: 25.0
-    military_backpack:
-      display-name: "&cMochila Militar"
-      bonus-weight: 60.0
-
+# Substituir o bloco custom-items.antibiotic existente
 custom-items:
   antibiotic:
     material: "SUGAR"
     custom-model-data: 1001
-    display-name: "&aAntibiótico Caseiro"
+    display-name: "&aAntibiótico Geral"
     infection-reduction: 30.0
-    immunity-boost: 0.0
-    use-message: "&aVocê aplicou um Antibiótico Caseiro. Infecção reduzida!"
+    immunity-boost: 10.0
+    use-message: "&aVocê tomou o Antibiótico. Infecção reduzida e Resfriado curado!"
     lore:
       - "&7Reduz a infecção em 30%"
+      - "&7Cura Resfriado/Gripe"
   syringe:
+    syringe:
     material: "FEATHER"
-    custom-model-data: 1002
+    custom-model-data: 15002
     display-name: "&cSeringa de Adrenalina"
     infection-reduction: 0.0
     immunity-boost: 40.0
     use-message: "&cVocê injetou Adrenalina. Imunidade temporariamente aumentada!"
     lore:
       - "&7Aumenta a imunidade em 40%"
+      # --- INÍCIO DA ADIÇÃO ---
+weight:
+  default-max-weight: 50.0
+  backpacks:
+    leather_backpack:
+      display-name: "&6Mochila de Couro"
+      bonus-weight: 25.0
+    military_backpack:
+      display-name: "&5Mochila Militar"
+      bonus-weight: 60.0
+  items:
+    STONE: 0.5
+    COBBLESTONE: 0.4
+    IRON_INGOT: 0.3
+    GOLD_INGOT: 0.4
+    DIAMOND: 0.1
+# --- FIM DA ADIÇÃO ---

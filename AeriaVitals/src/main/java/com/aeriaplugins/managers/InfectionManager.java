@@ -1,7 +1,7 @@
-package com.aeriaplugins.vitals.managers;
+package com.aeriaplugins.managers;
 
 import com.aeriaplugins.vitals.AeriaVitals;
-import com.aeriaplugins.vitals.data.PlayerData;
+import com.aeriaplugins.data.PlayerData;
 import org.bukkit.entity.Player;
 
 public class InfectionManager {

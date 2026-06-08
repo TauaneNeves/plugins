@@ -1,4 +1,4 @@
-package com.aeriaplugins.vitals.listeners;
+package com.aeriaplugins.listeners;
 
 import com.aeriaplugins.vitals.AeriaVitals;
 import org.bukkit.entity.Player;

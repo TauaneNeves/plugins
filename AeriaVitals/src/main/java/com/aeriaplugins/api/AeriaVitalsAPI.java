@@ -1,4 +1,4 @@
-package com.aeriaplugins.vitals.api;
+package com.aeriaplugins.api;
 
 import com.aeriaplugins.vitals.AeriaVitals;
 import org.bukkit.entity.Player;

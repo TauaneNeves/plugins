@@ -1,9 +1,9 @@
-package com.aeriaplugins.vitals.commands;
+package com.aeriaplugins.commands;
 
 import com.aeriaplugins.vitals.AeriaVitals;
-import com.aeriaplugins.vitals.data.PlayerData;
-import com.aeriaplugins.vitals.managers.MedicalManager;
-import com.aeriaplugins.vitals.managers.WeightManager;
+import com.aeriaplugins.data.PlayerData;
+import com.aeriaplugins.managers.MedicalManager;
+import com.aeriaplugins.managers.WeightManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -190,11 +190,15 @@ public class VitalsCommand implements CommandExecutor, TabCompleter {
                 }
 
                 if (args.length == 3 && args[0].equalsIgnoreCase("give")) {
-                        if (plugin.getConfig().getConfigurationSection("custom-items") == null)
-                                return new ArrayList<>();
-                        return new ArrayList<>(
-                                        plugin.getConfig().getConfigurationSection("custom-items").getKeys(false))
-                                        .stream()
+                        List<String> keys = new ArrayList<>();
+                        if (plugin.getConfig().getConfigurationSection("custom-items") != null) {
+                                keys.addAll(plugin.getConfig().getConfigurationSection("custom-items").getKeys(false));
+                        }
+                        if (plugin.getConfig().getConfigurationSection("weight.backpacks") != null) {
+                                keys.addAll(plugin.getConfig().getConfigurationSection("weight.backpacks")
+                                                .getKeys(false));
+                        }
+                        return keys.stream()
                                         .filter(key -> key.toLowerCase().startsWith(args[2].toLowerCase()))
                                         .collect(Collectors.toList());
                 }

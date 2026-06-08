@@ -1,7 +1,7 @@
-package com.aeriaplugins.vitals.listeners;
+package com.aeriaplugins.listeners;
 
 import com.aeriaplugins.vitals.AeriaVitals;
-import com.aeriaplugins.vitals.managers.InfectionManager;
+import com.aeriaplugins.managers.InfectionManager;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;

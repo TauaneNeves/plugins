@@ -1,12 +1,10 @@
-package com.aeriaplugins.vitals.managers;
+package com.aeriaplugins.managers;
 
 import com.aeriaplugins.vitals.AeriaVitals;
-import com.aeriaplugins.vitals.data.PlayerData;
-import org.bukkit.Location;
+import com.aeriaplugins.data.PlayerData;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 public class TemperatureManager {
 
@@ -18,19 +16,22 @@ public class TemperatureManager {
 
     public void updateTemperature(Player player) {
         PlayerData data = plugin.getPlayerData(player);
-        Location loc = player.getLocation();
-        double tempTarget = 0.0;
+        double targetTemp = plugin.getConfig().getDouble("temperature.base-body-temperature", 36.5);
 
-        String biomeStr = loc.getBlock().getBiome().name();
-        double biomeMod = plugin.getConfig().getDouble("temperature.biomes." + biomeStr, 0.0);
-        tempTarget += biomeMod;
+        String biomeName = player.getLocation().getBlock().getBiome().name();
+        double biomeMod = plugin.getConfig().getDouble("temperature.biomes." + biomeName, 0.0);
+        targetTemp += biomeMod;
 
-        if (loc.getWorld().getTime() >= 13000 && loc.getWorld().getTime() <= 23000) {
-            tempTarget += plugin.getConfig().getDouble("temperature.modifiers.night-penalty", -0.5);
+        if (player.getWorld().getTime() >= 13000 && player.getWorld().getTime() <= 23000) {
+            targetTemp += plugin.getConfig().getDouble("temperature.modifiers.night-penalty", -1.0);
         }
 
-        if (loc.getWorld().hasStorm() && loc.getBlockY() >= loc.getWorld().getHighestBlockYAt(loc)) {
-            tempTarget += plugin.getConfig().getDouble("temperature.modifiers.rain-penalty", -0.8);
+        if (player.getWorld().hasStorm()) {
+            targetTemp += plugin.getConfig().getDouble("temperature.modifiers.rain-penalty", -1.5);
+        }
+
+        if (player.getLocation().getBlock().getType() == Material.WATER) {
+            targetTemp += plugin.getConfig().getDouble("temperature.modifiers.water-modifier", -2.5);
         }
 
         boolean nearFire = false;
@@ -38,8 +39,8 @@ public class TemperatureManager {
         for (int x = -radius; x <= radius; x++) {
             for (int y = -radius; y <= radius; y++) {
                 for (int z = -radius; z <= radius; z++) {
-                    Block b = loc.clone().add(x, y, z).getBlock();
-                    if (b.getType() == Material.FIRE || b.getType() == Material.CAMPFIRE || b.getType() == Material.LAVA) {
+                    Block block = player.getLocation().add(x, y, z).getBlock();
+                    if (block.getType() == Material.FIRE || block.getType() == Material.CAMPFIRE || block.getType() == Material.SOUL_FIRE) {
                         nearFire = true;
                         break;
                     }
@@ -48,22 +49,14 @@ public class TemperatureManager {
         }
 
         if (nearFire) {
-            tempTarget += plugin.getConfig().getDouble("temperature.modifiers.near-fire", 2.5);
+            targetTemp += plugin.getConfig().getDouble("temperature.modifiers.near-fire", 5.0);
         }
 
-        ItemStack chest = player.getInventory().getChestplate();
-        if (chest != null && chest.getType() == Material.LEATHER_CHESTPLATE) {
-            if (tempTarget < 0) {
-                tempTarget += 1.5;
-            }
-        }
-
-        double current = data.getTemperature();
-        double rate = plugin.getConfig().getDouble("temperature.base-change-rate", 0.2);
-        if (current < tempTarget) {
-            data.setTemperature(current + rate);
-        } else if (current > tempTarget) {
-            data.setTemperature(current - rate);
+        double currentTemp = data.getTemperature();
+        if (currentTemp < targetTemp) {
+            data.setTemperature(Math.min(targetTemp, currentTemp + 0.2));
+        } else if (currentTemp > targetTemp) {
+            data.setTemperature(Math.max(targetTemp, currentTemp - 0.2));
         }
     }
 }

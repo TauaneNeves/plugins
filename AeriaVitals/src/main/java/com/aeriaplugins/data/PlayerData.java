@@ -1,20 +1,27 @@
-package com.aeriaplugins.vitals.data;
+package com.aeriaplugins.data;
+
+import org.bukkit.inventory.ItemStack;
 
 public class PlayerData {
 
     private double infection;
     private double immunity;
-    private double temperature;
-    private double currentWeight;
-    private double maxWeight;
+    private double temperature = 36.5;
+    private double currentWeight = 0.0;
+    private double maxWeight = 50.0;
+    private boolean hasCold = false;
 
-    public PlayerData() {
-        this.infection = 0.0;
-        this.immunity = 100.0;
-        this.temperature = 0.0;
-        this.currentWeight = 0.0;
-        this.maxWeight = 50.0;
-    }
+    private boolean bleeding = false;
+    private double thirst = 100.0;
+    private int morphineTicks = 0;
+
+    // Slots simplificados: Apenas Armadura nativa, Máscara e Mochila
+    private ItemStack customHelmet;
+    private ItemStack customMascara;
+    private ItemStack customChestplate;
+    private ItemStack customLeggings;
+    private ItemStack customBoots;
+    private ItemStack customBackpack;
 
     public double getInfection() {
         return infection;
@@ -57,6 +64,66 @@ public class PlayerData {
     }
 
     public void setMaxWeight(double maxWeight) {
-        this.maxWeight = Math.max(1.0, maxWeight);
+        this.maxWeight = maxWeight;
     }
+    
+    public boolean hasCold() {
+        return hasCold;
+    }
+
+    public void setHasCold(boolean hasCold) {
+        this.hasCold = hasCold;
+    }
+
+    public boolean isBleeding() {
+        return bleeding;
+    }
+
+    public void setBleeding(boolean bleeding) {
+        this.bleeding = bleeding;
+    }
+
+    public double getThirst() {
+        return thirst;
+    }
+
+    public void setThirst(double thirst) {
+        this.thirst = Math.max(0.0, Math.min(100.0, thirst));
+    }
+
+    public int getMorphineTicks() {
+        return morphineTicks;
+    }
+
+    public void setMorphineTicks(int morphineTicks) {
+        this.morphineTicks = Math.max(0, morphineTicks);
+    }
+
+    public int getBackpackTier() {
+        if (customBackpack == null || !customBackpack.hasItemMeta() || !customBackpack.getItemMeta().hasDisplayName()) {
+            return 0;
+        }
+        String name = customBackpack.getItemMeta().getDisplayName();
+        if (name.contains("Mochila de Couro")) return 1;
+        if (name.contains("Mochila Militar")) return 2;
+        return 0;
+    }
+
+    public ItemStack getCustomHelmet() { return customHelmet; }
+    public void setCustomHelmet(ItemStack customHelmet) { this.customHelmet = customHelmet; }
+
+    public ItemStack getCustomMascara() { return customMascara; }
+    public void setCustomMascara(ItemStack customMascara) { this.customMascara = customMascara; }
+
+    public ItemStack getCustomChestplate() { return customChestplate; }
+    public void setCustomChestplate(ItemStack customChestplate) { this.customChestplate = customChestplate; }
+
+    public ItemStack getCustomLeggings() { return customLeggings; }
+    public void setCustomLeggings(ItemStack customLeggings) { this.customLeggings = customLeggings; }
+
+    public ItemStack getCustomBoots() { return customBoots; }
+    public void setCustomBoots(ItemStack customBoots) { this.customBoots = customBoots; }
+
+    public ItemStack getCustomBackpack() { return customBackpack; }
+    public void setCustomBackpack(ItemStack customBackpack) { this.customBackpack = customBackpack; }
 }

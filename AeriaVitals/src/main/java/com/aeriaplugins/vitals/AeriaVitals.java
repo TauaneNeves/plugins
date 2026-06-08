@@ -1,21 +1,25 @@
 package com.aeriaplugins.vitals;
 
-import com.aeriaplugins.vitals.commands.VitalsCommand;
-import com.aeriaplugins.vitals.data.PlayerData;
-import com.aeriaplugins.vitals.data.StorageManager;
-import com.aeriaplugins.vitals.listeners.EnvironmentListener;
-import com.aeriaplugins.vitals.listeners.InventoryListener;
-import com.aeriaplugins.vitals.listeners.PlayerListener;
-import com.aeriaplugins.vitals.tasks.VitalsTickTask;
-import org.bukkit.Bukkit;
+import com.aeriaplugins.commands.VitalsCommand;
+import com.aeriaplugins.data.PlayerData;
+import com.aeriaplugins.data.StorageManager;
+import com.aeriaplugins.listeners.InfectionListener;
+import com.aeriaplugins.listeners.MedicalListener;
+import com.aeriaplugins.listeners.InventoryListener;
+import com.aeriaplugins.listeners.PlayerListener;
+import com.aeriaplugins.tasks.VitalsTickTask;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class AeriaVitals extends JavaPlugin {
+public class AeriaVitals extends JavaPlugin implements Listener {
 
     private static AeriaVitals instance;
     private final Map<UUID, PlayerData> playerDataMap = new HashMap<>();
@@ -25,29 +29,26 @@ public class AeriaVitals extends JavaPlugin {
     public void onEnable() {
         instance = this;
         saveDefaultConfig();
-
         this.storageManager = new StorageManager(this);
 
-        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
-        getServer().getPluginManager().registerEvents(new EnvironmentListener(this), this);
+        getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new MedicalListener(this), this);
+        getServer().getPluginManager().registerEvents(new InfectionListener(this), this);
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
-        
-        getCommand("aeriavitals").setExecutor(new VitalsCommand(this));
+        getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
 
-        new VitalsTickTask(this).runTaskTimer(this, 0L, getConfig().getLong("settings.update-tick-rate", 20L));
+        VitalsCommand vitalsCommand = new VitalsCommand(this);
+        getCommand("vitals").setExecutor(vitalsCommand);
+        getCommand("vitals").setTabCompleter(vitalsCommand);
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            storageManager.loadPlayerData(player);
-        }
+        long tickRate = getConfig().getLong("settings.update-tick-rate", 20L);
+        new VitalsTickTask(this).runTaskTimer(this, 0L, tickRate);
 
         getLogger().info("AeriaVitals ativado com sucesso.");
     }
 
     @Override
     public void onDisable() {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            storageManager.savePlayerData(player);
-        }
         playerDataMap.clear();
         getLogger().info("AeriaVitals desativado.");
     }
@@ -56,19 +57,29 @@ public class AeriaVitals extends JavaPlugin {
         return instance;
     }
 
+    public StorageManager getStorageManager() {
+        return storageManager;
+    }
+
     public Map<UUID, PlayerData> getPlayerDataMap() {
         return playerDataMap;
     }
 
     public PlayerData getPlayerData(Player player) {
-        return playerDataMap.computeIfAbsent(player.getUniqueId(), uuid -> new PlayerData());
+        return playerDataMap.computeIfAbsent(player.getUniqueId(), k -> new PlayerData());
     }
 
     public void removePlayerData(Player player) {
         playerDataMap.remove(player.getUniqueId());
     }
 
-    public StorageManager getStorageManager() {
-        return storageManager;
+    @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        getPlayerData(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        playerDataMap.remove(event.getPlayer().getUniqueId());
     }
 }

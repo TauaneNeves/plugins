@@ -1,4 +1,4 @@
-package com.aeriaplugins.vitals.data;
+package com.aeriaplugins.data;
 
 import com.aeriaplugins.vitals.AeriaVitals;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -30,18 +30,29 @@ public class StorageManager {
         if (!file.exists()) {
             data.setInfection(0.0);
             data.setImmunity(100.0);
-            data.setTemperature(0.0);
+            data.setTemperature(36.5);
             data.setCurrentWeight(0.0);
             data.setMaxWeight(50.0);
+            data.setBleeding(false);
+            data.setThirst(100.0);
             return;
         }
 
         FileConfiguration config = YamlConfiguration.loadConfiguration(file);
         data.setInfection(config.getDouble("infection", 0.0));
         data.setImmunity(config.getDouble("immunity", 100.0));
-        data.setTemperature(config.getDouble("temperature", 0.0));
+        data.setTemperature(config.getDouble("temperature", 36.5));
         data.setCurrentWeight(config.getDouble("currentWeight", 0.0));
         data.setMaxWeight(config.getDouble("maxWeight", 50.0));
+        data.setBleeding(config.getBoolean("bleeding", false));
+        data.setThirst(config.getDouble("thirst", 100.0));
+        
+        data.setCustomHelmet(config.getItemStack("equipment.helmet"));
+        data.setCustomMascara(config.getItemStack("equipment.mascara"));
+        data.setCustomChestplate(config.getItemStack("equipment.chestplate"));
+        data.setCustomLeggings(config.getItemStack("equipment.leggings"));
+        data.setCustomBoots(config.getItemStack("equipment.boots"));
+        data.setCustomBackpack(config.getItemStack("equipment.backpack"));
     }
 
     public void savePlayerData(Player player) {
@@ -57,6 +68,15 @@ public class StorageManager {
         config.set("temperature", data.getTemperature());
         config.set("currentWeight", data.getCurrentWeight());
         config.set("maxWeight", data.getMaxWeight());
+        config.set("bleeding", data.isBleeding());
+        config.set("thirst", data.getThirst());
+        
+        config.set("equipment.helmet", data.getCustomHelmet());
+        config.set("equipment.mascara", data.getCustomMascara());
+        config.set("equipment.chestplate", data.getCustomChestplate());
+        config.set("equipment.leggings", data.getCustomLeggings());
+        config.set("equipment.boots", data.getCustomBoots());
+        config.set("equipment.backpack", data.getCustomBackpack());
 
         try {
             config.save(file);
