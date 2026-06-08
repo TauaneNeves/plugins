@@ -1,0 +1,64 @@
+settings:
+  update-tick-rate: 20 # Execução da task a cada 20 ticks (1 segundo)
+
+infection:
+  zombie-bite-chance: 35.0 # Chance base de infectar sem imunidade
+  decay-per-second: 0.05 # Quanto diminui a infecção naturalmente se imunidade estiver alta
+  effects:
+    level-1:
+      trigger-percentage: 50.0
+    level-2:
+      trigger-percentage: 80.0
+
+temperature:
+  base-change-rate: 0.2
+  biomes:
+    DESERT: 1.5
+    BADLANDS: 1.2
+    SNOWY_PLAINS: -2.0
+    SNOWY_TAIGA: -1.8
+    ICE_SPIKES: -2.5
+    NETHER_WASTES: 3.0
+  modifiers:
+    night-penalty: -0.5
+    rain-penalty: -0.8
+    near-fire: 2.5
+
+weight:
+  default-max-weight: 50.0
+  items:
+    STONE: 1.5
+    COBBLESTONE: 1.3
+    IRON_INGOT: 2.0
+    GOLD_INGOT: 2.5
+    DIAMOND: 1.0
+    ROTTEN_FLESH: 0.1
+    APPLE: 0.2
+    BREAD: 0.2
+  backpacks:
+    leather_backpack:
+      display-name: "&6Mochila de Couro"
+      bonus-weight: 25.0
+    military_backpack:
+      display-name: "&cMochila Militar"
+      bonus-weight: 60.0
+
+custom-items:
+  antibiotic:
+    material: "SUGAR"
+    custom-model-data: 1001
+    display-name: "&aAntibiótico Caseiro"
+    infection-reduction: 30.0
+    immunity-boost: 0.0
+    use-message: "&aVocê aplicou um Antibiótico Caseiro. Infecção reduzida!"
+    lore:
+      - "&7Reduz a infecção em 30%"
+  syringe:
+    material: "FEATHER"
+    custom-model-data: 1002
+    display-name: "&cSeringa de Adrenalina"
+    infection-reduction: 0.0
+    immunity-boost: 40.0
+    use-message: "&cVocê injetou Adrenalina. Imunidade temporariamente aumentada!"
+    lore:
+      - "&7Aumenta a imunidade em 40%"
