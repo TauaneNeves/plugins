@@ -45,19 +45,15 @@ public class VitalsCommand implements CommandExecutor, TabCompleter {
 
                 if (args[0].equalsIgnoreCase("help")) {
                         sender.sendMessage("§e========= §6AeriaVitals - Ajuda §e=========");
-                        sender.sendMessage(
-                                        "§b/vitals §7- Exibe seus status de infecção, imunidade, temperatura e peso.");
+                        sender.sendMessage("§b/vitals §7- Exibe seus status de infecção, imunidade, temperatura e peso.");
                         sender.sendMessage("§b/vitals help §7- Mostra este menu detalhado de comandos.");
                         if (sender.hasPermission("aeriavitals.admin")) {
                                 sender.sendMessage("§e--------------------------------");
-                                sender.sendMessage(
-                                                "§c/vitals reload §7- Recarrega o arquivo config.yml instantaneamente.");
-                                sender.sendMessage(
-                                                "§c/vitals setinfection <player> <0-100> §7- Ajusta o nível de infecção do jogador.");
-                                sender.sendMessage(
-                                                "§c/vitals give <player> <item_id> [quantidade] §7- Envia um item médico da config.");
-                                sender.sendMessage(
-                                                "§c/vitals drop <item_id> [quantidade] §7- Dropa o item médico nas suas coordenadas.");
+                                sender.sendMessage("§c/vitals reload §7- Recarrega o arquivo config.yml instantaneamente.");
+                                sender.sendMessage("§c/vitals setinfection <player> <0-100> §7- Ajusta o nível de infecção do jogador.");
+                                sender.sendMessage("§c/vitals give <player> <item_id> [quantidade] §7- Envia um item médico da config.");
+                                sender.sendMessage("§c/vitals drop <item_id> [quantidade] §7- Dropa o item médico nas suas coordenadas.");
+                                sender.sendMessage("§c/radiacao set <raio_interno> <raio_externo> <nome> §7- Configura zona de radiação.");
                         }
                         sender.sendMessage("§e=================================");
                         return true;

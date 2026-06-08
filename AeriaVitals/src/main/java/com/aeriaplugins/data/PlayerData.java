@@ -15,6 +15,7 @@ public class PlayerData {
     private double thirst = 100.0;
     private int morphineTicks = 0;
     private double radiation = 0.0;
+    private boolean brokenLegs = false;
 
     private ItemStack customHelmet;
     private ItemStack customMascara;
@@ -107,6 +108,9 @@ public class PlayerData {
     public void setRadiation(double radiation) {
         this.radiation = Math.max(0.0, Math.min(100.0, radiation));
     }
+
+    public boolean hasBrokenLegs() { return brokenLegs; }
+    public void setBrokenLegs(boolean brokenLegs) { this.brokenLegs = brokenLegs; }
 
     public int getBackpackTier() {
         if (customBackpack == null || !customBackpack.hasItemMeta() || !customBackpack.getItemMeta().hasDisplayName()) {

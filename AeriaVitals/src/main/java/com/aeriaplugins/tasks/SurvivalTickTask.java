@@ -76,7 +76,10 @@ public class SurvivalTickTask extends BukkitRunnable {
                 );
                 if (isFiveSeconds) {
                     player.damage(1.0);
-                    if (!msgBleeding.isEmpty()) player.sendMessage(msgBleeding);
+                }
+                // Envia o alerta no chat apenas a cada 30 segundos para evitar spam
+                if (secondsCounter % 30 == 0 && !msgBleeding.isEmpty()) {
+                    player.sendMessage(msgBleeding);
                 }
             }
 
@@ -183,6 +186,11 @@ public class SurvivalTickTask extends BukkitRunnable {
 
             if (data.getRadiation() >= 90.0) {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, 140, 0, true, false));
+            }
+
+            if (data.hasBrokenLegs()) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 35, 3, true, false, true));
+                player.setSprinting(false);
             }
 
             // --- CORREÇÃO DA SEGURANÇA CONTRA NPE NA BUSCA DA VIDA MÁXIMA ---

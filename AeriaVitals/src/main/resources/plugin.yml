@@ -2,11 +2,13 @@ name: AeriaVitals
 version: 1.0.0
 main: com.aeriaplugins.vitals.AeriaVitals
 api-version: '1.21'
+# Contexto de inserção: Adicione o comando vitals logo abaixo do comando radiacao
 commands:
-  aeriavitals:
-    description: Comando principal do sistema AeriaVitals
-    aliases: [vitals]
   radiacao:
     description: Configura zonas de radiacao no mapa.
     permission: aeriavitals.admin
     usage: /radiacao set <raio_interno> <raio_externo> <nome_da_zona>
+  vitals:
+    description: Comando principal do AeriaVitals.
+    permission: aeriavitals.use
+    usage: /vitals help

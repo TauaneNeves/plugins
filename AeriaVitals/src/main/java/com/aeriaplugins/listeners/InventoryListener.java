@@ -163,7 +163,9 @@ public class InventoryListener implements Listener {
             if (event.getDamage() > 4.0) {
                 PlayerData data = plugin.getPlayerData(player);
                 data.setBleeding(true);
-                player.sendMessage("§cO impacto da queda fraturou feio e você começou a sangrar!");
+                data.setBrokenLegs(true);
+                String msgLegs = plugin.getConfig().getString("messages.legs-broken", "&c[!] Você sofreu uma queda violenta e quebrou as pernas!").replace("&", "§");
+                player.sendMessage(msgLegs);
             }
         }
     }
@@ -499,8 +501,9 @@ public class InventoryListener implements Listener {
         data.setCustomBoots(null);
         data.setCustomBackpack(null);
         data.setCustomShield(null);
+        data.setBrokenLegs(false);
     }
-
+    
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
@@ -532,16 +535,35 @@ public class InventoryListener implements Listener {
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
 
-        if (item != null && (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR
-                || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK)) {
+        if (item != null && (event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_AIR || event.getAction() == org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK)) {
             String name = item.getType().name();
-            if (name.contains("HELMET") || name.contains("CHESTPLATE") || name.contains("LEGGINGS")
-                    || name.contains("BOOTS")) {
+            if (name.contains("HELMET") || name.contains("CHESTPLATE") || name.contains("LEGGINGS") || name.contains("BOOTS")) {
                 event.setCancelled(true);
                 player.sendMessage("§cVocê só pode equipar proteções usando o menu do [F]!");
                 return;
             }
-
+            
+            if (item.hasItemMeta() && item.getItemMeta().hasCustomModelData() &&
+                item.getItemMeta().getCustomModelData() == plugin.getConfig().getInt("custom-items.tourniquet.custom-model-data", 1006)) {
+                event.setCancelled(true);
+                PlayerData data = plugin.getPlayerData(player);
+                if (!data.hasBrokenLegs()) {
+                    player.sendMessage("§cSuas pernas não estão quebradas.");
+                    return;
+                }
+                data.setBrokenLegs(false);
+                String msgTourniquet = plugin.getConfig().getString("messages.tourniquet-use", "&aVocê usou um torniquete.").replace("&", "§");
+                player.sendMessage(msgTourniquet);
+                
+                if (item.getAmount() > 1) {
+                    item.setAmount(item.getAmount() - 1);
+                } else {
+                    player.getInventory().setItemInMainHand(null);
+                }
+                weightManager.recalculateWeight(player);
+                return;
+            }
+            
             if (medicalManager.useMedicalItem(player, item)) {
                 event.setCancelled(true);
                 if (item.getAmount() > 1) {

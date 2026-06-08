@@ -53,6 +53,8 @@ messages:
   morphine-end: "&cO efeito da morfina acabou. Seu corpo está sofrendo crises de abstinência e náuseas."
   radiation-warning-outer: "&6[!] Você entrou em uma área de radiação moderada! Seu corpo está sofrendo alterações."
   radiation-warning-inner: "&c[!!!] PERIGO! Você está no epicentro da radiação! Danos críticos aplicados."
+  legs-broken: "&c[!] Você sofreu uma queda violenta e quebrou as pernas! Use um Torniquete."
+  tourniquet-use: "&aVocê aplicou o torniquete e tratou a fratura das suas pernas."
 
 custom-items:
   dirty_bandage:
@@ -86,6 +88,12 @@ custom-items:
     display-name: "&eMáscara de Gás NBQ"
     lore:
       - "&7Protege contra zonas contaminadas."
+  tourniquet:
+    material: "SUGAR"
+    custom-model-data: 1006
+    display-name: "&6Torniquete"
+    lore:
+      - "&7Cura fraturas e pernas quebradas."
 
 radiation-zones:
   zone_hospital:

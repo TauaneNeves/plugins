@@ -25,8 +25,13 @@ public class AeriaVitals extends JavaPlugin {
         
         this.storageManager = new StorageManager(this);
 
+        // Contexto de inserção: Localize o bloco de registro de comandos dentro do onEnable()
         if (this.getCommand("radiacao") != null) {
             this.getCommand("radiacao").setExecutor(new RadiationCommand(this));
+        }
+
+        if (this.getCommand("vitals") != null) {
+            this.getCommand("vitals").setExecutor(new com.aeriaplugins.commands.VitalsCommand(this));
         }
 
         getServer().getPluginManager().registerEvents(new InventoryListener(this), this);
