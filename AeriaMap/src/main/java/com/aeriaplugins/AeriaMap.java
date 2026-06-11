@@ -9,10 +9,9 @@ public class AeriaMap extends JavaPlugin {
     public void onEnable() {
         // Registro de comandos
         getCommand("apoc").setExecutor(new MapCommands(this));
-        
         // Registro de eventos
         getServer().getPluginManager().registerEvents(new ChestListener(this), this);
-        
+
         getLogger().info("AeriaMap ativado.");
     }
 }
