@@ -1,0 +1,8 @@
+name: AeriaMap
+version: 1.0.0
+main: com.aeriaplugins.AeriaMap
+api-version: '1.26'
+commands:
+  apoc:
+    description: Comando principal do AeriaMap
+    usage: /apoc <args>
